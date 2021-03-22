@@ -1,0 +1,20 @@
+Package: nationalization
+Title: Creation of Nationalization Measures
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Simon",
+           family = "Page",
+           role = c("aut", "cre"),
+           email = "pagesim@umich.edu",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: This package specifically utilizes data from the Constituency-Level Elections Archive (CLEA: http://www.electiondataarchive.org./) to 
+	     create party nationalization datasets, which contain effective number of parties measures (ENP), as well as several measures of party nationalization.
+	     These measures exist for both Lower Chamber and Upper Chamber election results at three different levels of aggregation: the national level,
+	     the party level, and the constituency level. Moreover, Gini measures of inequality are included as well, which are utilized for various measures. This
+	     package contains the main function to create and populate these databases, as well as scripts for post-processing of these measures and comparison of
+	     said measures to existing measures on the archive.
+License: `use_gpl3_license()`
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
