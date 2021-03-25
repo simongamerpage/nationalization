@@ -137,6 +137,7 @@ nationalization <- function(dataSource, dataType, dataQuality,
       data.b$pvs1 <- ifelse(data.b$cvs1 < 0, NA, data.b$pvs1)
       data.b$na_candidate <- ifelse(is.na(data.b$vv1) & is.na(data.b$cv1),1,0)
       # Comptuing unique constituency totals BEFORE filtering out NA candidates
+      data.b <- as.data.frame(data.b)
       data.b <- data.table(data.b)[,cst_tot := length(unique(cst)), by=c("ctr_n","ctr","yr","mn")]
       # Grabbing unique cases across entire frame, then filtering non-existent candidates
       data.b <- unique(data.b)
@@ -163,6 +164,7 @@ nationalization <- function(dataSource, dataType, dataQuality,
     data.c$pvs1 <- ifelse(data.c$pvs1 < 0, NA, data.c$pvs1)
     data.c$na_candidate <- ifelse(is.na(data.c$vv1) & is.na(data.c$pv1),1,0)
     # Computing unique constituency totals BEFORE filtering out NA candidates
+    data.c <- as.data.frame(data.c)
     data.c <- data.table(data.c)[,cst_tot := length(unique(cst)), by=c("ctr_n","ctr","yr","mn")]
     # Grabbing unique cases across entire frame, then filtering non-existent candidates
     data.c <- unique(data.c)
@@ -180,6 +182,7 @@ nationalization <- function(dataSource, dataType, dataQuality,
       data.c$pvs1 <- ifelse(data.c$cvs1 < 0, NA, data.c$cvs1)
       data.c$na_candidate <- ifelse(is.na(data.c$vv1) & is.na(data.c$cv1),1,0)
       # Computing unique constituency totals BEFORE filtering out NA candidates
+      data.c <- as.data.frame(data.c)
       data.c <- data.table(data.c)[,cst_tot := length(unique(cst)), by=c("ctr_n","ctr","yr","mn")]
       # Grabbing unique cases across entire frame, then filtering non-existent candidates
       data.c <- unique(data.c)
@@ -206,6 +209,7 @@ nationalization <- function(dataSource, dataType, dataQuality,
     data.d$seat <- ifelse(data.d$seat <= 0,NA, data.d$seat)
     data.d$na_candidate <- ifelse(is.na(data.d$vv1) & is.na(data.d$pv1) & is.na(data.d$seat),1,0)
     # Computing unique constituency totals BEFORE filtering out NA candidates
+    data.d <- as.data.frame(data.d)
     data.d <- data.table(data.d)[,cst_tot := length(unique(cst)), by=c("ctr_n","ctr","yr","mn")]
     # Grabbing unique cases across entire frame, then filtering non-existent candidates
     data.d <- unique(data.d)
@@ -224,6 +228,7 @@ nationalization <- function(dataSource, dataType, dataQuality,
       data.d$seat <- ifelse(data.d$seat <= 0,NA, data.d$seat)
       data.d$na_candidate <- ifelse(is.na(data.d$vv1) & is.na(data.d$cv1) & is.na(data.d$seat),1,0)
       # Computing unique constituency totals BEFORE filtering out NA candidates
+      data.d <- as.data.frame(data.d)
       data.d <- data.table(data.d)[,cst_tot := length(unique(cst)), by=c("ctr_n","ctr","yr","mn")]
       # Grabbing unique cases across entire frame, then filtering non-existent candidates
       data.d <- unique(data.d)
