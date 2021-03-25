@@ -118,6 +118,7 @@ nationalization <- function(dataSource, dataType, dataQuality,
     data.b$pvs1 <- ifelse(data.b$pvs1 < 0, NA, data.b$pvs1)
     data.b$na_candidate <- ifelse(is.na(data.b$vv1) | is.na(data.b$pv1),1,0)
     # Computing unique constituency totals BEFORE filtering out NA candidates
+    data.b <- as.data.frame(data.b)
     data.b <- data.table(data.b)[,cst_tot := length(unique(cst)), by=c("ctr_n","ctr","yr","mn")]
     # Grabbing unique cases across entire frame, then filtering non-existent candidates
     data.b <- unique(data.b)
@@ -239,7 +240,7 @@ nationalization <- function(dataSource, dataType, dataQuality,
   )
   
   # Removing memory-intense objects, now that we have data subsets
-  rm(dat,df)
+  #rm(dat,df)
 
   #--------------------------#
   # Gini Inequality Measures #
@@ -254,6 +255,8 @@ nationalization <- function(dataSource, dataType, dataQuality,
   # Grabbing distinct cases, then renaming to "gini." plus the variable/data being created
   gini.unique_rows <- !duplicated(data.a[c("id","ctr_n","ctr","yr", "mn","cst","pty")])
   gini.unique <- data.a[gini.unique_rows,]
+  #gini.unique$vote.totals <- ifelse(is.na(gini.unique$vote.totals),0,gini.unique$vote.totals)
+  #gini.unique$vote.shares <- gini.unique$vote.totals/gini.unique$vv1
   gini.base <- gini.unique
 
   # Grabbing valid votes at the national-level to filter small parties (less than 5% of the national vote)
