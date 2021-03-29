@@ -14,6 +14,11 @@ Description: This package specifically utilizes data from the Constituency-Level
 	     package contains the main function to create and populate these databases, as well as scripts for post-processing of these measures and comparison of
 	     said measures to existing measures on the archive.
 License: `use_gpl3_license()`
+Imports: data.table, 
+	 haven, 
+	 readxl, 
+	 openxlsx, 
+	 ineq
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
