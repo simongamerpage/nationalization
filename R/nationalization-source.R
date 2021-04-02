@@ -4,16 +4,16 @@
 #'              using CLEA data with output at the national-level, party-level, and the
 #'              constituency-level.
 #'
-#' @param dataSource Name of the file which the data are to be read from, in the form of a character string. Note that the data MUST be in CLEA format!
-#' @param dataType Indicates the type of data file being used. Note that acceptable formats are ".csv",".xlsx",".rdata", or ".dta"
-#' @param dataQuality Indicates the crucial columns which the user would like to use. Using "party.based" will utilize `pv1`/`pvs1` for vote totals/vote shares, which is the most
-#' traditional option. Note that the user also has the option of "candidate.based", which utilizes `cv1`/`cvs1` if party information is missing and candidate totals/shares are desirable
-#' as a proxy. Finally, "shares.based" is also another option to use ONLY shares, but is still in development, mostly for usage in presidential elections. Note that using "party.based"
-#' is desirable over using "candidate.based" to be true to the nature of the party nationalization measures being generated.
-#' @param outputFolder Character string of the location in which the user desires the output files to be written on their local machine. Note that four files will be generated at the
+#' @param dataSource Character string of the location of the CLEA data to be used for nationalization measure generation. 
+#' @param dataFormat Format of the data file being read. Acceptable formats are the following: ".csv",".xlsx",".rdata", or ".dta"
+#' @param outputFolder Character string of the location where the user desires the output files to be written on their local machine. Note that four files will be generated at the
 #' end of this script (i.e., party-level, national-level, constituency-level, and Gini inequality measures).
-#' @param inequalityType This argument technically accepts any character string, but the end result is always coerced to "Gini": this function/measures/data are predicated on these
-#' Gini inequality measures, thus it is recommended to use "Gini" because the script will override any other option anyway.
+#' @param inequalityType Optional argument, which defaults to "Gini" to compute Gini measures of inequality. Other options are available (i.e., "RS","Atkinson","Theil","Kolm", 
+#' "var","square.var","entropy"), but "Gini" is highly recommended.  
+#' @param CandidateOrPartyBased Optional argument, which defaults to "party.based"; this argument accepts only "party.based" or "candidate.based", which allows the user to proxy 
+#' candidate votes/candidate shares for party votes/party shares. This is indended for the advanced user, and "party.based" is highly recomended for accurate measures.
+#' @param filterSmallParties Optional argument, which defaults to `TRUE`. Generally, this package filters out parties that did not achieve at least five percent (`5%`) of the 
+#' national vote before computing measures of nationalization. However, the user can opt to maintain all parties in the output. 
 #' @return
 #' @export
 #'
@@ -23,8 +23,8 @@
 #' @import ineq
 #' @import openxlsx
 
-nationalization <- function(dataSource, dataType, dataQuality,
-                            outputFolder,inequalityType) {
+nationalization <- function(dataSource, dataFormat, outputFolder,
+                            inequalityType, CandidateOrPartyBased, filterSmallParties) {
   # Initial message & starting efficiency timer
   initial.message <- function() {
     print("---------------------------------------------------", quote = FALSE)
@@ -44,27 +44,38 @@ nationalization <- function(dataSource, dataType, dataQuality,
   #     install.packages(required.package, dep = TRUE)
   #   require(required.package, character.only = TRUE)
   # }
-  #
+  # 
   # usePackage("data.table") # For processing functions (more efficient than base R)
   # usePackage("haven") # For reading Stata
   # usePackage("readxl") # For reading Excel
   # usePackage("ineq") # For Gini computation
   # usePackage("openxlsx") # To write to .xlsx (desired format)
 
+  # Checking for missing arguments in function parameters; using this later to define defaults in optional arguments
+  inequalityType.indicator <- ifelse(missing(inequalityType),1,0)
+  CandidateOrPartyBased.indicator <- ifelse(missing(CandidateOrPartyBased),1,0)
+  filterSmallParties.indicator <- ifelse(missing(filterSmallParties),1,0)
+  
   # Checking data file type, then loading respective data
-  ifelse(dataType == ".csv", dat <- read.csv(dataSource), #; dat[,-c(X)]},
-         ifelse(dataType == ".xlsx", dat <- read_xlsx(dataSource),
-                ifelse(dataType == ".rdata", assign("dat",get(load(dataSource))),
-                       ifelse(dataType == ".dta", dat <- read_dta(dataSource),{
+  ifelse(dataFormat == ".csv", dat <- read.csv(dataSource), #; dat[,-c(X)]},
+         ifelse(dataFormat == ".xlsx", dat <- read_xlsx(dataSource),
+                ifelse(dataFormat == ".rdata", assign("dat",get(load(dataSource))),
+                       ifelse(dataFormat == ".dta", dat <- read_dta(dataSource),{
                          print("No appropriate data type selected.", quote = FALSE); stop()
                        }))))
 
-  # Making sure inequality index is "Gini"; override anything else
-  if (inequalityType != "Gini" & inequalityType %in% c("Gini", "RS", "Atkinson", "Theil", "Kolm",
-                                                       "var", "square.var", "entropy") == FALSE) {
+  # Making sure inequality index is "Gini" if not specified; enabling other inequality options as well
+  if (inequalityType.indicator == 1) {
+    # Coerce to Gini if the argument is not specified
     inequalityType <- "Gini"
-  }
-
+  } else (
+    if (inequalityType.indicator == 0 & inequalityType != "Gini" & inequalityType %in% c("Gini", "RS", "Atkinson", "Theil", "Kolm",
+                                                                                         "var", "square.var", "entropy") == FALSE) {
+      # Coerce to Gini if the argument is present, but not in the pre-approved list
+      inequalityType <- "Gini"
+    }
+  )
+  
   #----------------------#
   # Subset Data by Needs #
   #----------------------#
@@ -72,15 +83,29 @@ nationalization <- function(dataSource, dataType, dataQuality,
   # Selecting crucial columns as a base
   base <- subset(dat, select = c(id,ctr_n,ctr,yr,mn,cst,cst_n,pty,pty_n,vv1,pv1,pvs1,cv1,cvs1,seat))
 
+  # First, if the argument is not specified, coerce the argument to the default, "party.based";
+  # Also, if the argument is any other argument than those acceptable, coerce to the default
+  if (CandidateOrPartyBased.indicator == 1) {
+    # Coerce to "party.based" if the argument is not specified
+    CandidateOrPartyBased <- "party.based"
+  } else (
+    if (CandidateOrPartyBased.indicator == 0 & (CandidateOrPartyBased != "party.based" | 
+                                                CandidateOrPartyBased != "candidate.based" |
+                                                CandidateOrPartyBased != "shares.based")) {
+      # Coerce to "party.based" if the argument is present, but not in the pre-approved options
+      CandidateOrPartyBased <- "party.based"
+    }
+  )
+
   # Creating the base for gini and party-level computations called data.a,
   #... based on user preference of party, candidate, or shares based measures
-  if (dataQuality == "party.based") {
+  if (CandidateOrPartyBased == "party.based") {
     # Removing -990s for NAs, indicating absent candidates, etc...
     data.a <- subset(base,select = -c(cv1,cvs1))
     data.a$can <- 0
-    data.a$vv1 <- ifelse(data.a$vv1 < 0, NA, data.a$vv1)
-    data.a$pv1 <- ifelse(data.a$pv1 < 0, NA, data.a$pv1)
-    data.a$pvs1 <- ifelse(data.a$pvs1 < 0, NA, data.a$pvs1)
+    data.a$vv1 <- ifelse(data.a$vv1 == -990 | data.a$vv1 == -992 | data.a$vv1 == -994, NA, data.a$vv1)
+    data.a$pv1 <- ifelse(data.a$pv1 == -990 | data.a$pv1 == -992 | data.a$pv1 == -994, NA, data.a$pv1)
+    data.a$pvs1 <- ifelse(data.a$pvs1 == -990 | data.a$pvs1 == -992 | data.a$pvs1 == -994, NA, data.a$pvs1)
     data.a$na_candidate <- ifelse(is.na(data.a$vv1) & is.na(data.a$pv1),1,0)
     data.a <- unique(data.a)
     # Computing shares on our own, once, to avoid broken shares in data
@@ -93,12 +118,12 @@ nationalization <- function(dataSource, dataType, dataQuality,
     names(data.a)[names(data.a) == "pvs1"] <- "vote.shares"
     print("Sucessfully created subset for Gini & party-level measures...", quote = FALSE)
   } else (
-    if (dataQuality == "candidate.based") {
+    if (CandidateOrPartyBased == "candidate.based") {
       # Removing -990s for NAs, indicating absent candidates, etc...
       data.a <- subset(base,select = -c(pv1,pvs1))
-      data.a$vv1 <- ifelse(data.a$vv1 < 0, NA, data.a$vv1)
-      data.a$cv1 <- ifelse(data.a$cv1 < 0, NA, data.a$cv1)
-      data.a$cvs1 <- ifelse(data.a$cvs1 < 0, NA, data.a$cvs1)
+      data.a$vv1 <- ifelse(data.a$vv1 == -990 | data.a$vv1 == -992 | data.a$vv1 == -994, NA, data.a$vv1)
+      data.a$cv1 <- ifelse(data.a$cv1 == -990 | data.a$cv1 == -992 | data.a$cv1 == -994, NA, data.a$cv1)
+      data.a$cvs1 <- ifelse(data.a$cvs1 == -990 |data.a$cvs1 == -992 | data.a$cvs1 == -994, NA, data.a$cvs1)
       data.a$na_candidate <- ifelse(is.na(data.a$vv1) & is.na(data.a$cv1),1,0)
       data.a <- unique(data.a)
 
@@ -107,20 +132,20 @@ nationalization <- function(dataSource, dataType, dataQuality,
       names(data.a)[names(data.a) == "cvs1"] <- "vote.shares"
       print("Sucessfully created subset for Gini & party-level measures...", quote = FALSE)
     } else (
-      if (dataQuality == "shares.based") {
+      if (CandidateOrPartyBased == "shares.based") {
         print("IN DEVELOPMENT");stop()
       }
     )
   )
-
+  
   # Creating the base for national-level ENP AND constituency-level computations, based on user preference
   #... of party, candidate, or shares based measures
-  if (dataQuality == "party.based") {
+  if (CandidateOrPartyBased == "party.based") {
     data.b <- subset(base, select = -c(cv1,cvs1))
     data.b$can <- 0
-    data.b$vv1 <- ifelse(data.b$vv1 < 0, NA, data.b$vv1)
-    data.b$pv1 <- ifelse(data.b$pv1 <= 0, NA, data.b$pv1) # Note the <= difference here, vs. data in Gini section
-    data.b$pvs1 <- ifelse(data.b$pvs1 < 0, NA, data.b$pvs1)
+    data.b$vv1 <- ifelse(data.b$vv1 == -990 | data.b$vv1 == -992 | data.b$vv1 == -994, NA, data.b$vv1)
+    data.b$pv1 <- ifelse(data.b$pv1 == -990 | data.b$pv1 == -992 | data.b$pv1 == -994 | data.b$pv1 == 0, NA, data.b$pv1) # Note removal of zero here
+    data.b$pvs1 <- ifelse(data.b$pvs1 == -990 | data.b$pvs1 == -992 | data.b$pvs1 == -994, NA, data.b$pvs1)
     data.b$na_candidate <- ifelse(is.na(data.b$vv1) | is.na(data.b$pv1),1,0)
     # Computing unique constituency totals BEFORE filtering out NA candidates
     data.b <- as.data.frame(data.b)
@@ -134,13 +159,13 @@ nationalization <- function(dataSource, dataType, dataQuality,
     print("Sucessfully created subset for national-level ENP measures...", quote = FALSE)
     print("Sucessfully created subset for constituency-level measures...", quote = FALSE)
   } else (
-    if (dataQuality == "candidate.based") {
+    if (CandidateOrPartyBased == "candidate.based") {
       data.b <- subset(base, select = -c(pv1,pvs1))
       data.b$can <- 0
-      data.b$vv1 <- ifelse(data.b$vv1 < 0, NA, data.b$vv1)
-      data.b$pv1 <- ifelse(data.b$cv1 <= 0, NA, data.b$pv1) # Note the <= difference here, vs. data in Gini section
-      data.b$pvs1 <- ifelse(data.b$cvs1 < 0, NA, data.b$pvs1)
-      data.b$na_candidate <- ifelse(is.na(data.b$vv1) & is.na(data.b$cv1),1,0)
+      data.b$vv1 <- ifelse(data.b$vv1 == -990 | data.b$vv1 == -992 | data.b$vv1 == -994, NA, data.b$vv1)
+      data.b$pv1 <- ifelse(data.b$cv1 == -990 | data.b$cv1 == -992 | data.b$cv1 == -994 | data.b$cv1 == 0, NA, data.b$pv1) # Note removal of zero here
+      data.b$pvs1 <- ifelse(data.b$cvs1 == -990 | data.b$cvs1 == -992 | data.b$cvs1 == -994 | data.b$cvs1 == 0, NA, data.b$pvs1)
+      data.b$na_candidate <- ifelse(is.na(data.b$vv1) | is.na(data.b$cv1),1,0) # Note the OR here
       # Comptuing unique constituency totals BEFORE filtering out NA candidates
       data.b <- as.data.frame(data.b)
       data.b <- data.table(data.b)[,cst_tot := length(unique(cst)), by=c("ctr_n","ctr","yr","mn")]
@@ -153,7 +178,7 @@ nationalization <- function(dataSource, dataType, dataQuality,
       print("Sucessfully created subset for national-level ENP measures...", quote = FALSE)
       print("Sucessfully created subset for constituency-level measures...", quote = FALSE)
     } else (
-      if (dataQuality == "shares.based") {
+      if (CandidateOrPartyBased == "shares.based") {
         print("IN DEVELOPMENT");stop()
       }
     )
@@ -161,12 +186,12 @@ nationalization <- function(dataSource, dataType, dataQuality,
 
   # Creating the base for national-level PSNS computations, based on user preference
   #... of party, candidate, or shares based measures
-  if (dataQuality == "party.based") {
+  if (CandidateOrPartyBased == "party.based") {
     data.c <- subset(base, select = -c(cv1,cvs1))
     data.c$can <- 0
-    data.c$vv1 <- ifelse(data.c$vv1 < 0, NA, data.c$vv1)
-    data.c$pv1 <- ifelse(data.c$pv1 <= 0, NA, data.c$pv1)
-    data.c$pvs1 <- ifelse(data.c$pvs1 < 0, NA, data.c$pvs1)
+    data.c$vv1 <- ifelse(data.c$vv1 == -990 | data.c$vv1 == -992 | data.c$vv1 == -994, NA, data.c$vv1)
+    data.c$pv1 <- ifelse(data.c$pv1 == -990 | data.c$pv1 == -992 | data.c$pv1 == -994 | data.c$pv1 == 0, NA, data.c$pv1)
+    data.c$pvs1 <- ifelse(data.c$pvs1 == -990 | data.c$pvs1 == -992 | data.c$pvs1 == -994 | data.c$pvs1 == 0, NA, data.c$pvs1)
     data.c$na_candidate <- ifelse(is.na(data.c$vv1) & is.na(data.c$pv1),1,0)
     # Computing unique constituency totals BEFORE filtering out NA candidates
     data.c <- as.data.frame(data.c)
@@ -179,12 +204,12 @@ nationalization <- function(dataSource, dataType, dataQuality,
     names(data.c)[names(data.c) == "pvs1"] <- "vote.shares"
     print("Sucessfully created subset for national-level inflation/PSNS measures...", quote = FALSE)
   } else (
-    if (dataQuality == "candidate.based") {
+    if (CandidateOrPartyBased == "candidate.based") {
       data.c <- subset(base, select = -c(pv1,pvs1))
       data.c$can <- 0
-      data.c$vv1 <- ifelse(data.c$vv1 < 0, NA, data.c$vv1)
-      data.c$pv1 <- ifelse(data.c$cv1 <= 0, NA, data.c$cv1)
-      data.c$pvs1 <- ifelse(data.c$cvs1 < 0, NA, data.c$cvs1)
+      data.c$vv1 <- ifelse(data.c$vv1 == -990 | data.c$vv1 == -992 | data.c$vv1 == -994, NA, data.c$vv1)
+      data.c$pv1 <- ifelse(data.c$cv1 == -990 | data.c$cv1 == -992 | data.c$cv1 == -994 |data.c$cv1 == 0, NA, data.c$cv1)
+      data.c$pvs1 <- ifelse(data.c$cvs1 == -990 | data.c$cvs1 == -992 | data.c$cvs1 == -994 |data.c$cvs1 == 0, NA, data.c$cvs1)
       data.c$na_candidate <- ifelse(is.na(data.c$vv1) & is.na(data.c$cv1),1,0)
       # Computing unique constituency totals BEFORE filtering out NA candidates
       data.c <- as.data.frame(data.c)
@@ -197,7 +222,7 @@ nationalization <- function(dataSource, dataType, dataQuality,
       names(data.c)[names(data.c) == "cvs1"] <- "vote.shares"
       print("Sucessfully created subset for national-level inflation/PSNS measures...", quote = FALSE)
     } else (
-      if (dataQuality == "shares.based") {
+      if (CandidateOrPartyBased == "shares.based") {
         print("IN DEVELOPMENT");stop()
       }
     )
@@ -205,13 +230,13 @@ nationalization <- function(dataSource, dataType, dataQuality,
 
   # Creating a base for national-level local_E computations, based on user preference
   #... of party, candidate, or shares based measures
-  if (dataQuality == "party.based") {
+  if (CandidateOrPartyBased == "party.based") {
     data.d <- subset(base, select = -c(cv1,cvs1))
     data.d$can <- 0
-    data.d$vv1 <- ifelse(data.d$vv1 < 0, NA, data.d$vv1)
-    data.d$pv1 <- ifelse(data.d$pv1 <= 0, NA, data.d$pv1)
-    data.d$pvs1 <- ifelse(data.d$pvs1 < 0, NA, data.d$pvs1)
-    data.d$seat <- ifelse(data.d$seat <= 0,NA, data.d$seat)
+    data.d$vv1 <- ifelse(data.d$vv1 == -990 | data.d$vv1 == -992 | data.d$vv1 == -994, NA, data.d$vv1)
+    data.d$pv1 <- ifelse(data.d$pv1 == -990 | data.d$pv1 == -992 | data.d$pv1 == -994 | data.d$pv1 == 0, NA, data.d$pv1)
+    data.d$pvs1 <- ifelse(data.d$pvs1 == -990 | data.d$pvs1 == -992 | data.d$pvs1 == -994 | data.d$pvs1 == 0, NA, data.d$pvs1)
+    data.d$seat <- ifelse(data.d$seat == -990 | data.d$seat == -992 | data.d$seat == -994 | data.d$seat == 0, NA, data.d$seat)
     data.d$na_candidate <- ifelse(is.na(data.d$vv1) & is.na(data.d$pv1) & is.na(data.d$seat),1,0)
     # Computing unique constituency totals BEFORE filtering out NA candidates
     data.d <- as.data.frame(data.d)
@@ -224,13 +249,13 @@ nationalization <- function(dataSource, dataType, dataQuality,
     names(data.d)[names(data.d) == "pvs1"] <- "vote.shares"
     print("Sucessfully created subset for national-level local_E measures...", quote = FALSE)
   } else (
-    if (dataQuality == "candidate.based") {
+    if (CandidateOrPartyBased == "candidate.based") {
       data.d <- subset(base, select = -c(pv1,pvs1))
       data.d$can <- 0
-      data.d$vv1 <- ifelse(data.d$vv1 < 0, NA, data.d$vv1)
-      data.d$pv1 <- ifelse(data.d$cv1 <= 0, NA, data.d$cv1)
-      data.d$pvs1 <- ifelse(data.d$cvs1 < 0, NA, data.d$cvs1)
-      data.d$seat <- ifelse(data.d$seat <= 0,NA, data.d$seat)
+      data.d$vv1 <- ifelse(data.d$vv1 == -990 | data.d$vv1 == -992 | data.d$vv1 == -994, NA, data.d$vv1)
+      data.d$pv1 <- ifelse(data.d$cv1 == -990 | data.d$cv1 == -992 | data.d$cv1 == -994 | data.d$cv1 == 0, NA, data.d$cv1)
+      data.d$pvs1 <- ifelse(data.d$cvs1 == -990 | data.d$cvs1 == -992 | data.d$cvs1 == -994 | data.d$cvs1 == 0, NA, data.d$cvs1)
+      data.d$seat <- ifelse(data.d$seat == -990 | data.d$seat == -992 | data.d$seat == -994 | data.d$seat == 0, NA, data.d$seat)
       data.d$na_candidate <- ifelse(is.na(data.d$vv1) & is.na(data.d$cv1) & is.na(data.d$seat),1,0)
       # Computing unique constituency totals BEFORE filtering out NA candidates
       data.d <- as.data.frame(data.d)
@@ -243,7 +268,7 @@ nationalization <- function(dataSource, dataType, dataQuality,
       names(data.d)[names(data.d) == "cvs1"] <- "vote.shares"
       print("Sucessfully created subset for national-level local_E measures...", quote = FALSE)
     } else (
-      if (dataQuality == "shares.based") {
+      if (CandidateOrPartyBased == "shares.based") {
         print("IN DEVELOPMENT");stop()
       }
     )
@@ -251,7 +276,7 @@ nationalization <- function(dataSource, dataType, dataQuality,
 
   # Removing memory-intense objects, now that we have data subsets
   #rm(dat,df)
-
+  
   #--------------------------#
   # Gini Inequality Measures #
   #--------------------------#
@@ -272,8 +297,23 @@ nationalization <- function(dataSource, dataType, dataQuality,
   gini.nat_vv1 <- data.table(gini.vv1)[,nat_vv1 := sum(vote.totals, na.rm = TRUE), by=c("ctr_n","ctr","yr","mn")]
   gini.pty_nat_vv1 <- data.table(gini.nat_vv1)[,pty_nat_vv1 := sum(vote.totals),by=c("ctr_n","ctr","yr","mn","pty")]
   gini.pty_nat_vv1$nat_pvs <- gini.pty_nat_vv1$pty_nat_vv1 / gini.pty_nat_vv1$nat_vv1
-  gini.small_removed <- subset(gini.pty_nat_vv1,nat_pvs > 0.05)
-
+  
+  # Filtering small parties that do not meet the aforementioned threshold, based on user preference
+  if (filterSmallParties.indicator == 1) {
+    # Default: filter small parties if argument is missing
+    gini.small_removed <- subset(gini.pty_nat_vv1,nat_pvs > 0.05)
+  } else (
+    if (filterSmallParties.indicator == 0 & filterSmallParties == TRUE) {
+      # Variant 1: Argument is specified and filter out small 
+      gini.small_removed <- subset(gini.pty_nat_vv1,nat_pvs > 0.05)
+    } else (
+      if (filterSmallParties.indicator == 0 & filterSmallParties == FALSE) {
+        # Variant 2: Argument is specified and NO filtering small parties
+        gini.small_removed <- gini.pty_nat_vv1
+      }
+    )
+  )
+  
   # Recomputing vote shares ONCE to avoid possible broken shares; replacing NaN/NA/infinite with zero
   gini.small_removed$vote.shares <- gini.small_removed$vote.totals / gini.small_removed$vv1
   gini.small_removed$vote.shares <- ifelse(is.infinite(gini.small_removed$vote.shares), NA, gini.small_removed$vote.shares)
@@ -290,9 +330,9 @@ nationalization <- function(dataSource, dataType, dataQuality,
   # Cleaning the measures up, ordering, then shipping!
   # Note that "full." plus anything will be the name of final products being written to .xlsx
   full.gini <- subset(gini.ineq, select = c(id,ctr_n,ctr,yr,mn,cst,pty,giniI,vote.totals,vv1))
-  names(full.gini)[names(full.gini) == "vote.totals"] <- ifelse(dataQuality == "party.based","pv1",
-                                                                ifelse(dataQuality == "candidate.based","cv1",
-                                                                       ifelse(dataQuality == "shares.based","shares",NA)))
+  names(full.gini)[names(full.gini) == "vote.totals"] <- ifelse(CandidateOrPartyBased == "party.based","pv1",
+                                                                ifelse(CandidateOrPartyBased == "candidate.based","cv1",
+                                                                       ifelse(CandidateOrPartyBased == "shares.based","shares",NA)))
   full.gini <- full.gini[order(full.gini$cst), , drop = FALSE]
   full.gini <- full.gini[order(full.gini$ctr_n,full.gini$yr),]
 

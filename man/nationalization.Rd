@@ -6,27 +6,29 @@
 \usage{
 nationalization(
   dataSource,
-  dataType,
-  dataQuality,
+  dataFormat,
   outputFolder,
-  inequalityType
+  inequalityType,
+  CandidateOrPartyBased,
+  filterSmallParties
 )
 }
 \arguments{
-\item{dataSource}{Name of the file which the data are to be read from, in the form of a character string. Note that the data MUST be in CLEA format!}
+\item{dataSource}{Character string of the location of the CLEA data to be used for nationalization measure generation.}
 
-\item{dataType}{Indicates the type of data file being used. Note that acceptable formats are ".csv",".xlsx",".rdata", or ".dta"}
+\item{dataFormat}{Format of the data file being read. Acceptable formats are the following: ".csv",".xlsx",".rdata", or ".dta"}
 
-\item{dataQuality}{Indicates the crucial columns which the user would like to use. Using "party.based" will utilize \code{pv1}/\code{pvs1} for vote totals/vote shares, which is the most
-traditional option. Note that the user also has the option of "candidate.based", which utilizes \code{cv1}/\code{cvs1} if party information is missing and candidate totals/shares are desirable
-as a proxy. Finally, "shares.based" is also another option to use ONLY shares, but is still in development, mostly for usage in presidential elections. Note that using "party.based"
-is desirable over using "candidate.based" to be true to the nature of the party nationalization measures being generated.}
-
-\item{outputFolder}{Character string of the location in which the user desires the output files to be written on their local machine. Note that four files will be generated at the
+\item{outputFolder}{Character string of the location where the user desires the output files to be written on their local machine. Note that four files will be generated at the
 end of this script (i.e., party-level, national-level, constituency-level, and Gini inequality measures).}
 
-\item{inequalityType}{This argument technically accepts any character string, but the end result is always coerced to "Gini": this function/measures/data are predicated on these
-Gini inequality measures, thus it is recommended to use "Gini" because the script will override any other option anyway.}
+\item{inequalityType}{Optional argument, which defaults to "Gini" to compute Gini measures of inequality. Other options are available (i.e., "RS","Atkinson","Theil","Kolm",
+"var","square.var","entropy"), but "Gini" is highly recommended.}
+
+\item{CandidateOrPartyBased}{Optional argument, which defaults to "party.based"; this argument accepts only "party.based" or "candidate.based", which allows the user to proxy
+candidate votes/candidate shares for party votes/party shares. This is indended for the advanced user, and "party.based" is highly recomended for accurate measures.}
+
+\item{filterSmallParties}{Optional argument, which defaults to \code{TRUE}. Generally, this package filters out parties that did not achieve at least five percent (\verb{5\%}) of the
+national vote before computing measures of nationalization. However, the user can opt to maintain all parties in the output.}
 }
 \value{
 
