@@ -536,10 +536,10 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
   full.enp$cox <- (full.enp$ENEP_nat - full.enp$ENEP_avg)/ full.enp$ENEP_nat
   full.enp$MK_I <- (full.enp$ENEP_nat -  full.enp$ENEP_avg)/ full.enp$ENEP_avg
   full.enp$MK_I_w <- (full.enp$ENEP_nat - full.enp$ENEP_wght)/ full.enp$ENEP_wght
-
+  
   # Removing previous computations for memory efficiency (beginning with "enp.")
-  rm(list = ls()[grep("^e.", ls())])
-
+  rm(list = ls()[grep("^enp", ls())])
+  
   ##**************************##
   ## Computing PSNS & friends ##
   ##**************************##
@@ -584,11 +584,14 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
   psns.D <- data.table(psns.kurtosis_I_i)[, D := abs(coeff_var_I_i)^gamma * abs(kurtosis_I_i)^(1-gamma) * sign(coeff_var_I_i*kurtosis_I_i),
                                     by = c("ctr_n","ctr","yr","mn")]
   psns.MK_N <- data.table(psns.D)[, MK_N := abs(I_w)^alpha * abs(D)^(1-alpha) * sign(I_w*D), by = c("ctr_n","ctr","yr","mn")]
-  psns.MK_N_two <- data.table(psns.MK_N)[, MK_N_two := abs(I_w)^alpha * abs(coeff_var_I_i)^beta * abs(kurtosis_I_i)^(1 - alpha - beta) * sign(I_w*coeff_var_I_i*kurtosis_I_i),
+  MK_N_two <- data.table(psns.MK_N)[, MK_N_two := abs(I_w)^alpha * abs(coeff_var_I_i)^beta * abs(kurtosis_I_i)^(1 - alpha - beta) * sign(I_w*coeff_var_I_i*kurtosis_I_i),
                                    by = c("ctr_n","ctr","yr","mn")]
-
+  
+  # Removing previously-computed objects to maintain memory efficiency
+  rm(list = ls()[grep("^psns", ls())])
+  
   # A few more prerequisites, grabbing distinct cases again, then merging in party.level measures
-  psns.nat_vv1 <- data.table(psns.MK_N_two)[, nat_vv1 := sum(vote.totals, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn")]
+  psns.nat_vv1 <- data.table(MK_N_two)[, nat_vv1 := sum(vote.totals, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn")]
   psns.pty_vv1 <- data.table(psns.nat_vv1)[, pty_vv1 := sum(vote.totals, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","pty")]
   psns.pty_vv1 <- as.data.frame(psns.pty_vv1)
 
@@ -620,7 +623,7 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
   psns.unique_rows <- !duplicated(psns.slim)
   full.psns <- psns.slim[psns.unique_rows,]
 
-  # Removing previously-computed objects to maintain memory efficiency
+  # Removing previously-computed objects AGAIN to maintain memory efficiency
   rm(list = ls()[grep("^psns", ls())])
 
   ##*******************##
@@ -707,7 +710,7 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
   write.xlsx(full.nat, paste0(outputFolder, "national.level.xlsx"),
              keepNA = TRUE) # `keepNA` = TRUE maintains NAs in output file
   print("National-level measures successfully computed! Moving to constituency-level...", quote = FALSE)
-
+  
   #---------------------------------------------#
   # Constituency-Level Nationalization Measures #
   #---------------------------------------------#
