@@ -1,0 +1,69 @@
+---
+title: "Nationalization Example"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Nationalization_Example}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction and Purpose
+
+This package specifically utilizes data from the Constituency-Level Elections Archive ([CLEA](http://www.electiondataarchive.org./)) to create party nationalization datasets, which contain effective number of parties measures (ENP), as well as several measures of party nationalization. These measures exist for both Lower Chamber and Upper Chamber election results at three different levels of aggregation: the national level, the party level, and the constituency level. Moreover, Gini measures of inequality are included as well, which are utilized for various measures. This package contains the main function to create and populate these databases, as well as scripts for post-processing of these measures and comparison of said measures to existing measures on the archive.
+
+The following is a robust example of the usage of the nationalization package's nationalization script. More information is available [here](http://www.electiondataarchive.org./) on CLEA generally, or [here](http://www.electiondataarchive.org./party-nationalization-measures.php) about these measures of nationalization more-specifically.
+
+## Installing `nationalization`
+
+The package is housed on GitHub [here](https://github.com/simongamerpage/nationalization) and can easily be downloaded using the `devtools` package:
+```{r installing the package, eval = FALSE}
+install.packages("devtools")
+devtools::install_github("simongamerpage/nationalization")
+```
+
+Note that it is highly recommended to install all necessary dependencies if/when prompted during the installation process. While this package only depends on five packages, those packages have their own dependencies, which are necessary to be installed and up-to-date on the user's local machine. `R` may prompt the user to restart their session prior to installation, which is recommended; however, `R` does this for *every* package being downloaded or updated, thus opting to restart only once is acceptable.
+
+## Using Appropriate Data
+
+As noted, `nationalization()` requires data in CLEA format, where the most crucial variables include the identifying information (`id`,`ctr_n`, etc...) and the users vote total/vote share columns of choice, where `pv1` & `pvs1` are the recommended default. The following is a list of the variables used, where `cv1`/`cvs1` are only useful if the user opts to use them in the `CandidateOrPartyBased argument`:
+
+```{r variables, echo = FALSE}
+# Variable list to print
+vars=c("id","ctr_n","ctr","yr","mn","cst","cst_n","pty","pty_n","vv1","pv1","pvs1","cv1","cvs1","seat")
+print(vars)
+```
+
+## Using `nationalization`
+
+To use `nationalization::nationalization()`, only three arguments are absolutely necessary, which are listed and briefly explained below:
+
+* `dataSource`: where the CLEA data file exists on the users local machine. For example, if my CLEA data is in my computer's **Downloads** folder on Windows, my argument may look like this: "C:/Users/pagesim/Downloads/CLEA_data.rdata". 
+  + For more information on working directories, use `?getwd()` to read about file paths and/or the nature of a working directory.
+
+* `dataFormat`: the type of file being used for the aforementioned CLEA data. Note that the following formats are acceptable, and must be specified with the period and data type in quotation marks: ".csv",".xlsx",".rdata", or ".dta". 
+  + On Windows, right click your CLEA file and select `Properties` if you are not aware what type of data file you have.
+
+* `outputFolder`: where the user wants the output data files to be written and saved on their local machine. For example, if I had a folder on my Desktop where I wanted the output called "Output", my argument would look like the following on Windows: "C:/Users/pagesim/Desktop/output". Much like `dataSource`, see `?getwd` for help on working directories & their specification.
+
+A number of other arguments are available for the advanced user, which do not even need to be specified to run the script. For example, the user can change the way the inequality measure is computed with `inequalityType`, opt to use `cv1`/`cvs1` instead of party-based values in the `CandidateOrPartyBased` argument, or even opt to maintain smaller parties that should be removed in the `filterSmallParties` argument. More information on the possible inputs of all the arguments can be read in the help section for nationalization, namely by typing `?nationalization`.
+
+
+Now, it is time to run! In this example, my data exists on my Desktop, in a folder titled "CLEA", which is in `.rdata` format, and I want the output in that same folder, where a sub-folder called "output" exists.
+```{r running nationalization}
+library(nationalization)
+nationalization(dataSource = "C:/Users/pagesim/Desktop/CLEA/CLEA_LC_R14.rdata",
+                dataFormat = ".rdata",
+                outputFolder = "C:/Users/pagesim/Desktop/CLEA/output/")
+```
+
+As you can see, the script ran well on this test data, which happens to be CLEA's Release 14 (approx. 1.1 million rows).
+
+
+
