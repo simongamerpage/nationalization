@@ -2,7 +2,7 @@
 title: "Nationalization Example"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Nationalization_Example}
+  %\VignetteIndexEntry{Nationalization Example}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
