@@ -59,12 +59,14 @@ A number of other arguments are available for the advanced user, which do not ne
 
 
 Now, it is time to run! In this example, my data exists on my Desktop, in a folder titled "CLEA", which is in `.rdata` format, and I want the output in that same folder, where a sub-folder called "output" exists.
-```{r running nationalization}
+```{r running nationalization, eval = FALSE}
 library(nationalization)
 nationalization(dataSource = "C:/Users/pagesim/Desktop/CLEA/CLEA_LC_R14.rdata",
                 dataFormat = ".rdata",
                 outputFolder = "C:/Users/pagesim/Desktop/CLEA/output/")
 ```
+
+![image]("nationalization/vignettes/nationalization_running.png")
 
 As you can see, the script ran well on this test data, which happens to be CLEA's Release 14 (approx. 1.1 million rows).
 
