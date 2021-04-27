@@ -4,16 +4,16 @@
 #'              using CLEA data with output at the national-level, party-level, and the
 #'              constituency-level.
 #'
-#' @param dataSource Character string of the location of the CLEA data to be used for nationalization measure generation. 
+#' @param dataSource Character string of the location of the CLEA data to be used for nationalization measure generation.
 #' @param dataFormat Format of the data file being read. Acceptable formats are the following: ".csv",".xlsx",".rdata", or ".dta"
 #' @param outputFolder Character string of the location where the user desires the output files to be written on their local machine. Note that four files will be generated at the
 #' end of this script (i.e., party-level, national-level, constituency-level, and Gini inequality measures).
-#' @param inequalityType Optional argument, which defaults to "Gini" to compute Gini measures of inequality. Other options are available (i.e., "RS","Atkinson","Theil","Kolm", 
-#' "var","square.var","entropy"), but "Gini" is highly recommended.  
-#' @param CandidateOrPartyBased Optional argument, which defaults to "party.based"; this argument accepts only "party.based" or "candidate.based", which allows the user to proxy 
+#' @param inequalityType Optional argument, which defaults to "Gini" to compute Gini measures of inequality. Other options are available (i.e., "RS","Atkinson","Theil","Kolm",
+#' "var","square.var","entropy"), but "Gini" is highly recommended.
+#' @param CandidateOrPartyBased Optional argument, which defaults to "party.based"; this argument accepts only "party.based" or "candidate.based", which allows the user to proxy
 #' candidate votes/candidate shares for party votes/party shares. This is indended for the advanced user, and "party.based" is highly recomended for accurate measures.
-#' @param filterSmallParties Optional argument, which defaults to `TRUE`. Generally, this package filters out parties that did not achieve at least five percent (`5%`) of the 
-#' national vote before computing measures of nationalization. However, the user can opt to maintain all parties in the output. 
+#' @param filterSmallParties Optional argument, which defaults to `TRUE`. Generally, this package filters out parties that did not achieve at least five percent (`5%`) of the
+#' national vote before computing measures of nationalization. However, the user can opt to maintain all parties in the output.
 #' @return
 #' @export
 #'
@@ -44,7 +44,7 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
   #     install.packages(required.package, dep = TRUE)
   #   require(required.package, character.only = TRUE)
   # }
-  # 
+  #
   # usePackage("data.table") # For processing functions (more efficient than base R)
   # usePackage("haven") # For reading Stata
   # usePackage("readxl") # For reading Excel
@@ -55,7 +55,7 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
   inequalityType.indicator <- ifelse(missing(inequalityType),1,0)
   CandidateOrPartyBased.indicator <- ifelse(missing(CandidateOrPartyBased),1,0)
   filterSmallParties.indicator <- ifelse(missing(filterSmallParties),1,0)
-  
+
   # Checking data file type, then loading respective data
   ifelse(dataFormat == ".csv", dat <- read.csv(dataSource), #; dat[,-c(X)]},
          ifelse(dataFormat == ".xlsx", dat <- read_xlsx(dataSource),
@@ -75,7 +75,7 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
       inequalityType <- "Gini"
     }
   )
-  
+
   #----------------------#
   # Subset Data by Needs #
   #----------------------#
@@ -89,7 +89,7 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
     # Coerce to "party.based" if the argument is not specified
     CandidateOrPartyBased <- "party.based"
   } else (
-    if (CandidateOrPartyBased.indicator == 0 & (CandidateOrPartyBased != "party.based" | 
+    if (CandidateOrPartyBased.indicator == 0 & (CandidateOrPartyBased != "party.based" |
                                                 CandidateOrPartyBased != "candidate.based" |
                                                 CandidateOrPartyBased != "shares.based")) {
       # Coerce to "party.based" if the argument is present, but not in the pre-approved options
@@ -137,7 +137,7 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
       }
     )
   )
-  
+
   # Creating the base for national-level ENP AND constituency-level computations, based on user preference
   #... of party, candidate, or shares based measures
   if (CandidateOrPartyBased == "party.based") {
@@ -276,7 +276,7 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
 
   # Removing memory-intense objects, now that we have data subsets
   #rm(dat,df)
-  
+
   #--------------------------#
   # Gini Inequality Measures #
   #--------------------------#
@@ -297,14 +297,14 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
   gini.nat_vv1 <- data.table(gini.vv1)[,nat_vv1 := sum(vote.totals, na.rm = TRUE), by=c("ctr_n","ctr","yr","mn")]
   gini.pty_nat_vv1 <- data.table(gini.nat_vv1)[,pty_nat_vv1 := sum(vote.totals),by=c("ctr_n","ctr","yr","mn","pty")]
   gini.pty_nat_vv1$nat_pvs <- gini.pty_nat_vv1$pty_nat_vv1 / gini.pty_nat_vv1$nat_vv1
-  
+
   # Filtering small parties that do not meet the aforementioned threshold, based on user preference
   if (filterSmallParties.indicator == 1) {
     # Default: filter small parties if argument is missing
     gini.small_removed <- subset(gini.pty_nat_vv1,nat_pvs > 0.05)
   } else (
     if (filterSmallParties.indicator == 0 & filterSmallParties == TRUE) {
-      # Variant 1: Argument is specified and filter out small 
+      # Variant 1: Argument is specified and filter out small
       gini.small_removed <- subset(gini.pty_nat_vv1,nat_pvs > 0.05)
     } else (
       if (filterSmallParties.indicator == 0 & filterSmallParties == FALSE) {
@@ -313,17 +313,17 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
       }
     )
   )
-  
+
   # Recomputing vote shares ONCE to avoid possible broken shares; replacing NaN/NA/infinite with zero
   gini.small_removed$vote.shares <- gini.small_removed$vote.totals / gini.small_removed$vv1
   gini.small_removed$vote.shares <- ifelse(is.infinite(gini.small_removed$vote.shares), NA, gini.small_removed$vote.shares)
   gini.small_removed$vote.shares <- ifelse(is.na(gini.small_removed$vote.shares), 0, gini.small_removed$vote.shares)
 
   # Creating a tier column, indicating tiered elections (i.e., cst > 901 in multi-tier PR systems)
-  gini.small_removed$tier <- ifelse(gini.small_removed$cst >= 901,1,0)
+  #gini.small_removed$tier <- ifelse(gini.small_removed$cst >= 901,1,0)
 
-  # Computing Gini BASED ON TIER (above), then removing NA/NaN
-  gini.ineq <- setDT(gini.small_removed)[,giniI := ineq(vote.shares, NULL,type = inequalityType, na.rm = TRUE),by=c("ctr_n","ctr","yr","mn","pty","tier")]
+  # Computing Gini, then removing NA/NaN
+  gini.ineq <- setDT(gini.small_removed)[,giniI := ineq(vote.shares, NULL,type = inequalityType, na.rm = TRUE),by=c("ctr_n","ctr","yr","mn","pty")] # ,"tier"
   gini.ineq$giniI <- replace(gini.ineq$giniI, gini.ineq$giniI < 0, 0)
   gini.ineq$giniI <- replace(gini.ineq$giniI, gini.ineq$giniI == "NaN", 0)
 
@@ -536,10 +536,10 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
   full.enp$cox <- (full.enp$ENEP_nat - full.enp$ENEP_avg)/ full.enp$ENEP_nat
   full.enp$MK_I <- (full.enp$ENEP_nat -  full.enp$ENEP_avg)/ full.enp$ENEP_avg
   full.enp$MK_I_w <- (full.enp$ENEP_nat - full.enp$ENEP_wght)/ full.enp$ENEP_wght
-  
+
   # Removing previous computations for memory efficiency (beginning with "enp.")
   rm(list = ls()[grep("^enp", ls())])
-  
+
   ##**************************##
   ## Computing PSNS & friends ##
   ##**************************##
@@ -586,10 +586,10 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
   psns.MK_N <- data.table(psns.D)[, MK_N := abs(I_w)^alpha * abs(D)^(1-alpha) * sign(I_w*D), by = c("ctr_n","ctr","yr","mn")]
   MK_N_two <- data.table(psns.MK_N)[, MK_N_two := abs(I_w)^alpha * abs(coeff_var_I_i)^beta * abs(kurtosis_I_i)^(1 - alpha - beta) * sign(I_w*coeff_var_I_i*kurtosis_I_i),
                                    by = c("ctr_n","ctr","yr","mn")]
-  
+
   # Removing previously-computed objects to maintain memory efficiency
   rm(list = ls()[grep("^psns", ls())])
-  
+
   # A few more prerequisites, grabbing distinct cases again, then merging in party.level measures
   psns.nat_vv1 <- data.table(MK_N_two)[, nat_vv1 := sum(vote.totals, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn")]
   psns.pty_vv1 <- data.table(psns.nat_vv1)[, pty_vv1 := sum(vote.totals, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","pty")]
@@ -710,7 +710,7 @@ nationalization <- function(dataSource, dataFormat, outputFolder,
   write.xlsx(full.nat, paste0(outputFolder, "national.level.xlsx"),
              keepNA = TRUE) # `keepNA` = TRUE maintains NAs in output file
   print("National-level measures successfully computed! Moving to constituency-level...", quote = FALSE)
-  
+
   #---------------------------------------------#
   # Constituency-Level Nationalization Measures #
   #---------------------------------------------#
