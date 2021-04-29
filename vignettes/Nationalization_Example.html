@@ -178,7 +178,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li>Much like <code>dataSource</code>, see <code>?getwd</code> for help on working directories &amp; their specification on your system.</li>
 </ul></li>
 </ul>
-<p>A number of other arguments are available for the advanced user, which do not need to be specified to run the script. For example, the user can change the way the inequality measure is computed with <code>inequalityType</code>, opt to use <code>cv1</code>/<code>cvs1</code> instead of party-based values in the <code>CandidateOrPartyBased</code> argument, or even opt to maintain smaller parties that should be removed in the <code>filterSmallParties</code> argument. More information on the possible inputs of all the arguments can be read in the help section for nationalization by typing <code>?nationalization</code>.</p>
+<p>A number of other arguments are available for the advanced user, which do not need to be specified to run the script. The next section describes these optional arguments and their relevance in detail; moreover, using <code>?nationalization</code> in the console after loading the library, <code>library(nationalization)</code>, describes all the arguments briefly.</p>
 <p>Now, it is time to run! In this example, my data exists on my Desktop, in a folder titled “CLEA”, which is in <code>.rdata</code> format, and I want the output in that same folder, where a sub-folder called “output” exists.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(nationalization)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">nationalization</span>(<span class="at">dataSource =</span> <span class="st">&quot;C:/Users/pagesim/Desktop/CLEA/CLEA_LC_R14.rdata&quot;</span>,</span>
@@ -211,6 +211,24 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] Constituency-level measures successfully computed!</span></span>
 <span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The entire computation took  2.650667 mins </span></span>
 <span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] Done!</span></span></code></pre></div>
+</div>
+<div id="optional-arguments-for-the-advanced-user" class="section level2">
+<h2>Optional Arguments for the Advanced User</h2>
+<p>A number of optional arguments with default parameters exist for the advanced user of the nationalization function. Their purpose and applicability are listed and described below in detail. Note that <em>none</em> of the following arguments need to be specified for the function to work as intended.</p>
+<ul>
+<li><code>inequalityType</code>: The user has the option to select from a number of different ways to compute measures of inequality. Although <code>&quot;Gini&quot;</code> is the default and highly recommended, the user can compute inequality measures with any of the following character strings. Note that measures on the CLEA Archive are computed using <code>&quot;Gini&quot;</code>.
+<ul>
+<li><code>&quot;RS&quot;</code>, <code>&quot;Atkinson&quot;</code>, <code>&quot;Theil&quot;</code>, <code>&quot;Kolm&quot;</code>, <code>&quot;var&quot;</code>, <code>&quot;square.var&quot;</code>, <code>&quot;entropy&quot;</code></li>
+</ul></li>
+<li><code>CandidateOrPartyBased</code>: The user has the option to proxy party vote totals and party vote shares for their candidate-based counterparts. In other words, the user can proxy <code>pv1</code>/<code>pvs1</code> with <code>cv1</code>/<code>cvs1</code>. Note that this is not recommended because these measures are comparing <em>parties at their core</em>. Nevertheless, using candidate-based measures is sometimes desirable because data structure and quality varies greatly.
+<ul>
+<li><strong>Users can only utilize the following strings for this argument</strong>: <code>&quot;party.based&quot;</code> (default/recommended option), or <code>&quot;candidate.based&quot;</code>. Note that <code>&quot;shares.based&quot;</code>, where the user’s data may only have vote shares, is in development because of its applicability to a great deal of presidential election data, but this is a future project.</li>
+</ul></li>
+<li><code>filterSmallParties</code>: By default, the script <em>filters out</em> parties that do not achieve at least five percent of the vote share at the national level. We do this because computing measures of nationalization for all of these relatively small parties is not valuable for analysis; in other words, nationalization measures for those parties hold little to no value. However, this argument offers the user to maintain these parties and compute their respective measures. By indicating <code>filterSmallParties = FALSE</code>, these parties will be maintained.
+<ul>
+<li>Note that the user technically can indicate <code>filterSmallParties = TRUE</code>, yet this is the default and highly-recommended, thus does not have to be specified.</li>
+</ul></li>
+</ul>
 </div>
 
 

@@ -55,7 +55,7 @@ To use `nationalization::nationalization()`, only three arguments are absolutely
 * `outputFolder`: where the user wants the output data files to be written and saved on their local machine. For example, if I had a folder on my Desktop where I wanted the output called "Output", my argument would look like the following on Windows: "C:/Users/pagesim/Desktop/output". On Mac, it may look like the following: "~/Desktop/output".
   + Much like `dataSource`, see `?getwd` for help on working directories & their specification on your system.
 
-A number of other arguments are available for the advanced user, which do not need to be specified to run the script. For example, the user can change the way the inequality measure is computed with `inequalityType`, opt to use `cv1`/`cvs1` instead of party-based values in the `CandidateOrPartyBased` argument, or even opt to maintain smaller parties that should be removed in the `filterSmallParties` argument. More information on the possible inputs of all the arguments can be read in the help section for nationalization by typing `?nationalization`.
+A number of other arguments are available for the advanced user, which do not need to be specified to run the script. The next section describes these optional arguments and their relevance in detail; moreover, using `?nationalization` in the console after loading the library, `library(nationalization)`, describes all the arguments briefly.
 
 
 Now, it is time to run! In this example, my data exists on my Desktop, in a folder titled "CLEA", which is in `.rdata` format, and I want the output in that same folder, where a sub-folder called "output" exists.
@@ -95,3 +95,19 @@ Output in the console should look similar to the following, where total computat
 #> The entire computation took  2.650667 mins 
 #> [1] Done!
 ```
+
+## Optional Arguments for the Advanced User
+
+A number of optional arguments with default parameters exist for the advanced user of the nationalization function. Their purpose and applicability are listed and described below in detail. Note that *none* of the following arguments need to be specified for the function to work as intended.
+
+* `inequalityType`: The user has the option to select from a number of different ways to compute measures of inequality. Although `"Gini"` is the default and highly recommended, the user can compute inequality measures with any of the following character strings. Note that measures on the CLEA Archive are computed using `"Gini"`.
+  + `"RS"`, `"Atkinson"`, `"Theil"`, `"Kolm"`, `"var"`, `"square.var"`, `"entropy"`
+  
+* `CandidateOrPartyBased`: The user has the option to proxy party vote totals and party vote shares for their candidate-based counterparts. In other words, the user can proxy `pv1`/`pvs1` with `cv1`/`cvs1`. Note that this is not recommended because these measures are comparing *parties at their core*. Nevertheless, using candidate-based measures is sometimes desirable because data structure and quality varies greatly. 
+  + **Users can only utilize the following strings for this argument**: `"party.based"` (default/recommended option), or `"candidate.based"`. Note that `"shares.based"`, where the user's data may only have vote shares, is in development because of its applicability to a great deal of presidential election data, but this is a future project.
+  
+* `filterSmallParties`: By default, the script *filters out* parties that do not achieve at least five percent of the vote share at the national level. We do this because computing measures of nationalization for all of these relatively small parties is not valuable for analysis; in other words, nationalization measures for those parties hold little to no value. However, this argument offers the user to maintain these parties and compute their respective measures. By indicating `filterSmallParties = FALSE`, these parties will be maintained.
+  + Note that the user technically can indicate `filterSmallParties = TRUE`, yet this is the default and highly-recommended, thus does not have to be specified.
+  
+
+
