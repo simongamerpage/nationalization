@@ -8,9 +8,9 @@ nationalization(
   dataSource,
   dataFormat,
   outputFolder,
-  inequalityType,
-  CandidateOrPartyBased,
-  filterSmallParties
+  inequalityType = "Gini",
+  CandidateOrPartyBased = "party.based",
+  filterSmallParties = FALSE
 )
 }
 \arguments{
@@ -37,4 +37,7 @@ national vote before computing measures of nationalization. However, the user ca
 This function creates and populates datasets of party nationalization measures,
 using CLEA data with output at the national-level, party-level, and the
 constituency-level.
+}
+\author{
+Simon Page
 }

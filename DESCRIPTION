@@ -1,11 +1,11 @@
 Package: nationalization
 Title: Creation of Nationalization Measures
-Version: 0.0.0.9000
+Version: 2.0
 Authors@R: 
     person(given = "Simon",
            family = "Page",
            role = c("aut", "cre"),
-           email = "pagesim@umich.edu",
+           email = "clea-project@umich.edu",
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: This package specifically utilizes data from the Constituency-Level Elections Archive (CLEA: http://www.electiondataarchive.org./) to 
 	     create party nationalization datasets, which contain effective number of parties measures (ENP), as well as several measures of party nationalization.

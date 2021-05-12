@@ -38,7 +38,7 @@ As noted, `nationalization()` requires data in CLEA format, where the most cruci
 In short, ensure the following columns are present, at the very least, to ensure `nationalization()` runs correctly:
 ```{r variables, echo = FALSE}
 # Variable list to print
-vars=c("id","ctr_n","ctr","yr","mn","cst","cst_n","pty","pty_n","vv1","pv1","pvs1","cv1","cvs1","seat")
+vars=c("id","ctr_n","ctr","yr","mn","tier","cst","cst_n","pty","pty_n","vv1","pv1","pvs1","cv1","cvs1","seat")
 print(vars)
 ```
 

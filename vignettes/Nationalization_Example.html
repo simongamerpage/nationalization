@@ -158,8 +158,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h2>Using Appropriate Data</h2>
 <p>As noted, <code>nationalization()</code> requires data in CLEA format, where the most crucial variables for <code>nationalization()</code> to run successfully are included below. Users should ensure that these columns are present prior to running the script, even if they are empty and/or not relevant for output. For example, even if the user opts to use the default <code>pv1</code>/<code>pvs1</code> used for measures, having <code>cv1</code>/<code>cvs1</code> present and filled with <code>-990</code> is required because the script parses the correct columns to use.</p>
 <p>In short, ensure the following columns are present, at the very least, to ensure <code>nationalization()</code> runs correctly:</p>
-<pre><code>#&gt;  [1] &quot;id&quot;    &quot;ctr_n&quot; &quot;ctr&quot;   &quot;yr&quot;    &quot;mn&quot;    &quot;cst&quot;   &quot;cst_n&quot; &quot;pty&quot;   &quot;pty_n&quot;
-#&gt; [10] &quot;vv1&quot;   &quot;pv1&quot;   &quot;pvs1&quot;  &quot;cv1&quot;   &quot;cvs1&quot;  &quot;seat&quot;</code></pre>
+<pre><code>#&gt;  [1] &quot;id&quot;    &quot;ctr_n&quot; &quot;ctr&quot;   &quot;yr&quot;    &quot;mn&quot;    &quot;tier&quot;  &quot;cst&quot;   &quot;cst_n&quot; &quot;pty&quot;  
+#&gt; [10] &quot;pty_n&quot; &quot;vv1&quot;   &quot;pv1&quot;   &quot;pvs1&quot;  &quot;cv1&quot;   &quot;cvs1&quot;  &quot;seat&quot;</code></pre>
 </div>
 <div id="using-nationalization" class="section level2">
 <h2>Using <code>nationalization</code></h2>
