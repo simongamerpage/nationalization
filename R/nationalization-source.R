@@ -79,7 +79,7 @@ nationalization <- function(dataSource,
   #----------------------#
 
   # Selecting crucial columns as a base
-  base <- subset(dat, select = c(id,ctr_n,ctr,yr,mn,cst,cst_n,pty,pty_n,vv1,pv1,pvs1,cv1,cvs1,tier,seat)) # ADDED TIER
+  base <- subset(dat, select = c(id,ctr_n,ctr,yr,mn,cst,cst_n,pty,pty_n,vv1,pv1,pvs1,cv1,cvs1,tier,seat))
 
   # Coercing argument to "party.based" if the selection is not within pre-approved possibilities
   if ((CandidateOrPartyBased != "party.based" |
@@ -318,14 +318,14 @@ nationalization <- function(dataSource,
   ineq.message()
 
   # Grabbing distinct cases, then renaming to "gini." plus the variable/data being created
-  gini.unique_rows <- !duplicated(data.a[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")]) # ADDED TIER
+  gini.unique_rows <- !duplicated(data.a[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")])
   gini.base <- data.a[gini.unique_rows,]
 
   # Grabbing valid votes at the national-level to filter small parties (less than 5% of the national vote)
-  gini.totals <- data.table(gini.base)[,vote.totals := sum(vote.totals, na.rm = TRUE), by=c("id","ctr_n","ctr","yr","mn","cst","pty","tier")] # ADDED TIER
-  gini.vv1 <- data.table(gini.totals)[,vv1 := sum(vv1, na.rm = TRUE),by=c("id","ctr_n","ctr","yr","mn","cst","pty","tier")] # ADDED TIER
-  gini.nat_vv1 <- data.table(gini.vv1)[,nat_vv1 := sum(vote.totals, na.rm = TRUE), by=c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  gini.pty_nat_vv1 <- data.table(gini.nat_vv1)[,pty_nat_vv1 := sum(vote.totals),by=c("ctr_n","ctr","yr","mn","pty","tier")] # ADDED TIER
+  gini.totals <- data.table(gini.base)[,vote.totals := sum(vote.totals, na.rm = TRUE), by=c("id","ctr_n","ctr","yr","mn","cst","pty","tier")]
+  gini.vv1 <- data.table(gini.totals)[,vv1 := sum(vv1, na.rm = TRUE),by=c("id","ctr_n","ctr","yr","mn","cst","pty","tier")]
+  gini.nat_vv1 <- data.table(gini.vv1)[,nat_vv1 := sum(vote.totals, na.rm = TRUE), by=c("ctr_n","ctr","yr","mn","tier")]
+  gini.pty_nat_vv1 <- data.table(gini.nat_vv1)[,pty_nat_vv1 := sum(vote.totals),by=c("ctr_n","ctr","yr","mn","pty","tier")]
   gini.pty_nat_vv1$nat_pvs <- gini.pty_nat_vv1$pty_nat_vv1 / gini.pty_nat_vv1$nat_vv1
 
   # Filtering small parties that do not meet the aforementioned threshold, based on user preference
@@ -345,18 +345,18 @@ nationalization <- function(dataSource,
   gini.small_removed$vote.shares <- ifelse(is.na(gini.small_removed$vote.shares), 0, gini.small_removed$vote.shares)
 
   # Computing Gini inequality (note, computed by tier in multi-PR systems), then removing NA/NaN
-  gini.ineq <- setDT(gini.small_removed)[,giniI := ineq(vote.shares, NULL,type = inequalityType, na.rm = TRUE),by=c("ctr_n","ctr","yr","mn","pty","tier")] # ADDED TIER
+  gini.ineq <- setDT(gini.small_removed)[,giniI := ineq(vote.shares, NULL,type = inequalityType, na.rm = TRUE),by=c("ctr_n","ctr","yr","mn","pty","tier")]
   gini.ineq$giniI <- replace(gini.ineq$giniI, gini.ineq$giniI < 0, 0)
   gini.ineq$giniI <- replace(gini.ineq$giniI, gini.ineq$giniI == "NaN", 0)
 
   # Cleaning the measures up, ordering, then shipping!
   # Note that "full." plus anything will be the name of final products being written to .xlsx
-  full.gini <- subset(gini.ineq, select = c(id,ctr_n,ctr,yr,mn,tier,cst,pty,giniI,vote.totals,vv1)) # ADDED TIER
+  full.gini <- subset(gini.ineq, select = c(id,ctr_n,ctr,yr,mn,tier,cst,pty,giniI,vote.totals,vv1))
   names(full.gini)[names(full.gini) == "vote.totals"] <- ifelse(CandidateOrPartyBased == "party.based","pv1",
                                                                 ifelse(CandidateOrPartyBased == "candidate.based","cv1",
                                                                        ifelse(CandidateOrPartyBased == "shares.based","shares",NA)))
   full.gini <- full.gini[order(full.gini$cst), , drop = FALSE]
-  full.gini <- full.gini[order(full.gini$ctr_n,full.gini$yr,full.gini$tier),] # ADDED TIER
+  full.gini <- full.gini[order(full.gini$ctr_n,full.gini$yr,full.gini$tier),]
 
   # Writing Gini to .xlsx; informing of success
   write.xlsx(full.gini, paste0(outputFolder, "gini.values.xlsx"),
@@ -378,11 +378,11 @@ nationalization <- function(dataSource,
 
   # Grabbing distinct cases, using same data.a (computed above in subset section); then,
   # renaming to "pty." plus the variable/data being created
-  pty.unique_rows <- !duplicated(data.a[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")]) # ADDED TIER
+  pty.unique_rows <- !duplicated(data.a[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")])
   pty.base <- data.a[pty.unique_rows,]
 
   # Merging in gini, then using it to compute vanilla PNS
-  pty.gini <- merge(pty.base, full.gini, by = c("id","ctr_n","ctr","yr","mn","cst","pty","vv1","tier"),all.x = TRUE) # ADDED TIER
+  pty.gini <- merge(pty.base, full.gini, by = c("id","ctr_n","ctr","yr","mn","cst","pty","vv1","tier"),all.x = TRUE)
   pty.gini$PNS <- 1 - pty.gini$giniI
 
   # Computing unique constituency length AND standardized PNS (PNS_s)
@@ -395,12 +395,12 @@ nationalization <- function(dataSource,
   # Computing prerequisites for weighted PNS (PNS_w)
   # Grabbing distinct cases
   pty.cst_tot <- as.data.frame(pty.cst_tot) # Need to reassign as data.frame type for !duplicated() to work
-  pty.cst_tot_unique_rows <- !duplicated(pty.cst_tot[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")]) # ADDED TIER
+  pty.cst_tot_unique_rows <- !duplicated(pty.cst_tot[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")])
   pty.unique_cst_tot <- pty.cst_tot[pty.cst_tot_unique_rows,]
 
   # Grabbing nationl-level vv1 and party vv1 (nat_vv1, pty_vv1)
-  pty.nat_vv1 <- data.table(pty.unique_cst_tot)[,nat_vv1 := sum(vote.totals, na.rm = TRUE), by=c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  pty.pty_vv1 <- data.table(pty.nat_vv1)[,pty_vv1 := sum(pv1, na.rm = TRUE), by=c("ctr_n","ctr","yr","mn","pty","tier")]   # ADDED TIER
+  pty.nat_vv1 <- data.table(pty.unique_cst_tot)[,nat_vv1 := sum(vote.totals, na.rm = TRUE), by=c("ctr_n","ctr","yr","mn","tier")]
+  pty.pty_vv1 <- data.table(pty.nat_vv1)[,pty_vv1 := sum(pv1, na.rm = TRUE), by=c("ctr_n","ctr","yr","mn","pty","tier")]
   pty.national <- pty.pty_vv1
 
   # PNS_w denominator
@@ -410,24 +410,24 @@ nationalization <- function(dataSource,
   pty.national$cst_vv1 <- pty.national$vv1
   pty.ordered <- pty.national[order(pty.national$id,pty.national$ctr_n,pty.national$ctr,pty.national$yr,
                                     pty.national$mn,pty.national$pty,pty.national$vote.shares),,drop = FALSE]
-  pty.p_j <- data.table(pty.ordered)[,p_j := cumsum(vote.totals), by=c("ctr_n","ctr","yr","mn","pty","tier")] # ADDED TIER
+  pty.p_j <- data.table(pty.ordered)[,p_j := cumsum(vote.totals), by=c("ctr_n","ctr","yr","mn","pty","tier")]
 
   # Computing the "inside" of the numerator's sum, then computing PNS_w numerator
-  pty.inside <- data.table(pty.p_j)[,inside := cst_vv1 * (p_j - (vote.totals / 2)), by=c("ctr_n","ctr","yr","mn","pty","tier")] # ADDED TIER
-  pty.numerator <- data.table(pty.inside)[,numerator := sum(inside, na.rm=TRUE),by=c("ctr_n","ctr","yr","mn","pty","tier")] # ADDED TIER
+  pty.inside <- data.table(pty.p_j)[,inside := cst_vv1 * (p_j - (vote.totals / 2)), by=c("ctr_n","ctr","yr","mn","pty","tier")]
+  pty.numerator <- data.table(pty.inside)[,numerator := sum(inside, na.rm=TRUE),by=c("ctr_n","ctr","yr","mn","pty","tier")]
 
   # Computing PNS_w at long last! Replacing infinite/NaN with NA
-  pty.pns_w <- data.table(pty.numerator)[,PNS_w := ((2 * numerator)/ denominator),by=c("ctr_n","ctr","yr","mn","pty","tier")] # ADDED TIER
+  pty.pns_w <- data.table(pty.numerator)[,PNS_w := ((2 * numerator)/ denominator),by=c("ctr_n","ctr","yr","mn","pty","tier")]
   pty.pns_w$PNS_w[is.infinite(pty.pns_w$PNS_w)] <- NA
   pty.pns_w$PNS_w[is.nan(pty.pns_w$PNS_w)] <- NA
 
   # Computing PNS_w AGAIN, but using vote.totals as a proxy for replacement
   pty.pns_w$cst_vv1_new <- pty.pns_w$vote.totals
-  pty.pj_new <- data.table(pty.pns_w)[,p_j_new := cumsum(vote.totals), by=c("ctr_n","ctr","yr","mn","pty","tier")] # ADDED TIER
-  pty.inside_new <- data.table(pty.pj_new)[,inside_new := cst_vv1_new * (p_j_new - (vote.totals / 2)), by=c("ctr_n","ctr","yr","mn","pty","tier")] # ADDED TIER
-  pty.numerator_new <- data.table(pty.inside_new)[,numerator_new := sum(inside_new, na.rm=TRUE),by=c("ctr_n","ctr","yr","mn","pty","tier")] # ADDED TIER
+  pty.pj_new <- data.table(pty.pns_w)[,p_j_new := cumsum(vote.totals), by=c("ctr_n","ctr","yr","mn","pty","tier")]
+  pty.inside_new <- data.table(pty.pj_new)[,inside_new := cst_vv1_new * (p_j_new - (vote.totals / 2)), by=c("ctr_n","ctr","yr","mn","pty","tier")]
+  pty.numerator_new <- data.table(pty.inside_new)[,numerator_new := sum(inside_new, na.rm=TRUE),by=c("ctr_n","ctr","yr","mn","pty","tier")]
 
-  pty.pns_w_new <- data.table(pty.numerator_new)[,PNS_w_new := ((2 * numerator_new) / denominator), by=c("ctr_n","ctr","yr","mn","pty","tier")] # ADDED TIER
+  pty.pns_w_new <- data.table(pty.numerator_new)[,PNS_w_new := ((2 * numerator_new) / denominator), by=c("ctr_n","ctr","yr","mn","pty","tier")]
   pty.pns_w_new$PNS_w[is.infinite(pty.pns_w_new$PNS_w)] <- NA
   pty.pns_w_new$PNS_w[is.nan(pty.pns_w_new$PNS_w)] <- NA
 
@@ -441,21 +441,21 @@ nationalization <- function(dataSource,
 
   # Select down to the relevant variables, and continue on to compute standardized-weighted PNS (PNS_sw)
   pty.slim <- subset(pty.pns_w_new, select = c(id,ctr_n,ctr,yr,mn,cst,pty_n,pty,cst_vv1,
-                                               nat_vv1,PNS,PNS_s,PNS_w,alt_vv1,cst_tot,tier)) # ADDED TIER
+                                               nat_vv1,PNS,PNS_s,PNS_w,alt_vv1,cst_tot,tier))
 
   # Computing parts of PNS_sw computation
   pty.slim$top <- (pty.slim$nat_vv1)^2
   pty.slim$square <- (pty.slim$cst_vv1)^2
 
-  pty.pid <- data.table(pty.slim)[,pid := 1:length(nat_vv1),by=c("ctr_n","ctr","yr","mn","cst","tier")] # ADDED TIER
+  pty.pid <- data.table(pty.slim)[,pid := 1:length(nat_vv1),by=c("ctr_n","ctr","yr","mn","cst","tier")]
   pty.pid$helper <- rep(NA,length(pty.pid$nat_vv1))
   pty.pid$helper <- ifelse(pty.pid$pid == 1, pty.pid$square, pty.pid$helper)
 
-  pty.bottom <- data.table(pty.pid)[,bottom := sum(helper, na.rm=TRUE), by=c("ctr_n","ctr","yr","tier")] # ADDED TIER
+  pty.bottom <- data.table(pty.pid)[,bottom := sum(helper, na.rm=TRUE), by=c("ctr_n","ctr","yr","tier")]
   pty.bottom$power_E <- pty.bottom$top / pty.bottom$bottom
 
   # Computing PNS_sw
-  pty.pns_sw <- data.table(pty.bottom)[,PNS_sw := (PNS_w)^(1/(log10(power_E))), by=c("ctr_n","ctr","yr","tier")] # ADDED TIER
+  pty.pns_sw <- data.table(pty.bottom)[,PNS_sw := (PNS_w)^(1/(log10(power_E))), by=c("ctr_n","ctr","yr","tier")]
   pty.pns_sw$PNS_sw <- replace(pty.pns_sw$PNS_sw, is.na(pty.pns_sw$PNS_sw), NA)
   pty.pns_sw$PNS_sw <- replace(pty.pns_sw$PNS_sw, pty.pns_sw$PNS_sw > 1, NA)
 
@@ -468,11 +468,11 @@ nationalization <- function(dataSource,
   pty.to_clean$PNS_sw <- replace(pty.to_clean$PNS_sw, pty.to_clean$pty >= 3996 & pty.to_clean$pty < 5000, NA)
 
   # Selecting down to relevant output columns; arranging for viewing
-  pty.slimmer <- subset(pty.to_clean, select = c(id, ctr_n, ctr, yr, mn, pty_n, pty, tier, PNS, PNS_s, PNS_w, PNS_sw, cst_tot)) # ADDED TIER
+  pty.slimmer <- subset(pty.to_clean, select = c(id, ctr_n, ctr, yr, mn, pty_n, pty, tier, PNS, PNS_s, PNS_w, PNS_sw, cst_tot))
   full.pty <- pty.slimmer
 
-  full.pty <- as.data.frame(full.pty[order(full.pty$ctr_n,full.pty$yr,full.pty$pty,full.pty$tier),]) # ADDED TIER
-  pty.full_rows <- !duplicated(full.pty[,c("id","ctr_n","ctr","yr", "mn","pty","tier")]) # ADDED TIER
+  full.pty <- as.data.frame(full.pty[order(full.pty$ctr_n,full.pty$yr,full.pty$pty,full.pty$tier),])
+  pty.full_rows <- !duplicated(full.pty[,c("id","ctr_n","ctr","yr", "mn","pty","tier")])
   full.pty <- full.pty[pty.full_rows,]
 
   # Writing party-level to .xlsx; informing of success
@@ -500,7 +500,7 @@ nationalization <- function(dataSource,
 
   # Grabbing distinct cases, using data.b computed in subset section
   data.b <- as.data.frame(data.b)
-  nat.unique.rows <- !duplicated(data.b[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")]) # ADDED TIER
+  nat.unique.rows <- !duplicated(data.b[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")])
   enp.distinct <- data.b[nat.unique.rows,]
 
   # Renaming to "enp." plus the variable/data being created for ENP section
@@ -508,21 +508,21 @@ nationalization <- function(dataSource,
 
   # Grabbing unique again to get the data to the national level
   enp.totals <- as.data.frame(enp.totals)
-  enp.unique.rows <- !duplicated(enp.totals[c("id","ctr_n","ctr","yr", "mn","pty","tier")]) # ADDED TIER
+  enp.unique.rows <- !duplicated(enp.totals[c("id","ctr_n","ctr","yr", "mn","pty","tier")])
   enp.unique <- enp.totals[enp.unique.rows,]
 
   # Computing ENP_nat, then selecting down to relevant columns
-  enp.nat_vv1 <- data.table(enp.unique)[,nat_vv1 := sum(vote.totals, na.rm = TRUE), by=c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  enp.shares_sq <- data.table(enp.nat_vv1)[,party_prop_nat2 := (vote.totals/nat_vv1)^2, by=c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  enp.denom <- data.table(enp.shares_sq)[,denominator := sum(party_prop_nat2, na.rm = TRUE), by=c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  enp.enep_nat <- data.table(enp.denom)[,ENEP_nat := 1/denominator, by=c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  enp.enep_nat <- subset(enp.enep_nat, select = c(id,ctr_n,ctr,yr,mn,tier,ENEP_nat,cst)) # ADDED TIER
+  enp.nat_vv1 <- data.table(enp.unique)[,nat_vv1 := sum(vote.totals, na.rm = TRUE), by=c("ctr_n","ctr","yr","mn","tier")]
+  enp.shares_sq <- data.table(enp.nat_vv1)[,party_prop_nat2 := (vote.totals/nat_vv1)^2, by=c("ctr_n","ctr","yr","mn","tier")]
+  enp.denom <- data.table(enp.shares_sq)[,denominator := sum(party_prop_nat2, na.rm = TRUE), by=c("ctr_n","ctr","yr","mn","tier")]
+  enp.enep_nat <- data.table(enp.denom)[,ENEP_nat := 1/denominator, by=c("ctr_n","ctr","yr","mn","tier")]
+  enp.enep_nat <- subset(enp.enep_nat, select = c(id,ctr_n,ctr,yr,mn,tier,ENEP_nat,cst))
 
   # Computing ENP_cst (enp.distinct computed above)
-  enp.new_vv1 <- data.table(enp.distinct)[,new_vv1 := sum(vote.totals),by=c("ctr_n","ctr","yr","mn","cst","tier")] # ADDED TIER
-  enp.new_shares_sq <- data.table(enp.new_vv1)[,share_sq := (vote.totals/new_vv1)^2,by=c("ctr_n","ctr","yr","mn","cst","tier")] # ADDED TIER
-  e.new_denom <- data.table(enp.new_shares_sq)[,denominator := sum(share_sq),by=c("ctr_n","ctr","yr","mn","cst","tier")] # ADDED TIER
-  enp.enep_cst <- data.table(e.new_denom)[,ENEP_cst := 1/denominator,by=c("ctr_n","ctr","yr","mn","cst","tier")] # ADDED TIER
+  enp.new_vv1 <- data.table(enp.distinct)[,new_vv1 := sum(vote.totals),by=c("ctr_n","ctr","yr","mn","cst","tier")]
+  enp.new_shares_sq <- data.table(enp.new_vv1)[,share_sq := (vote.totals/new_vv1)^2,by=c("ctr_n","ctr","yr","mn","cst","tier")]
+  e.new_denom <- data.table(enp.new_shares_sq)[,denominator := sum(share_sq),by=c("ctr_n","ctr","yr","mn","cst","tier")]
+  enp.enep_cst <- data.table(e.new_denom)[,ENEP_cst := 1/denominator,by=c("ctr_n","ctr","yr","mn","cst","tier")]
 
   # Adding an indicator if new vv1 (above) does not equal true vv1
   enp.enep_cst$indicator <- 0
@@ -530,30 +530,30 @@ nationalization <- function(dataSource,
 
   # Grabbing unique ENP_cst
   enp.enep_cst <- as.data.frame(enp.enep_cst)
-  enp.unique.rows_enp <- !duplicated(enp.enep_cst[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")]) # ADDED TIER
+  enp.unique.rows_enp <- !duplicated(enp.enep_cst[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")])
   enp.unique_nat <- enp.enep_cst[enp.unique.rows_enp,]
 
   # Summing the indicator (computed above)
   enp.new_indicator <- data.table(enp.unique_nat)[,indicator := ifelse(sum(indicator, na.rm=TRUE) > 0, 1, indicator),
-                                                  by=c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
+                                                  by=c("ctr_n","ctr","yr","mn","tier")]
 
   # Computing weights, then weighted ENP (ENP_wght)
-  enp.new_nat_vv1 <- data.table(enp.new_indicator)[,nat_vv1 := sum(new_vv1, na.rm=TRUE),by=c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  enp.cst_wght <- data.table(enp.new_nat_vv1)[,cst_wght := (new_vv1/nat_vv1),by=c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  enp.weighted <- data.table(enp.cst_wght)[,weighted := (cst_wght * ENEP_cst),by=c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  enp.enep_wght <- data.table(enp.weighted)[,ENEP_wght := sum(weighted),by=c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
+  enp.new_nat_vv1 <- data.table(enp.new_indicator)[,nat_vv1 := sum(new_vv1, na.rm=TRUE),by=c("ctr_n","ctr","yr","mn","tier")]
+  enp.cst_wght <- data.table(enp.new_nat_vv1)[,cst_wght := (new_vv1/nat_vv1),by=c("ctr_n","ctr","yr","mn","tier")]
+  enp.weighted <- data.table(enp.cst_wght)[,weighted := (cst_wght * ENEP_cst),by=c("ctr_n","ctr","yr","mn","tier")]
+  enp.enep_wght <- data.table(enp.weighted)[,ENEP_wght := sum(weighted),by=c("ctr_n","ctr","yr","mn","tier")]
 
   # Now, we compute average ENP (ENP_avg) using ENP_cst
-  enp.enep_avg <- data.table(enp.enep_wght)[,ENEP_avg := mean(ENEP_cst),by=c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
+  enp.enep_avg <- data.table(enp.enep_wght)[,ENEP_avg := mean(ENEP_cst),by=c("ctr_n","ctr","yr","mn","tier")]
   enp.enp_avg_wght <- as.data.frame(enp.enep_avg)
 
   # Merging both ENP-related sets, then cleaning them up
-  enp.merge <- merge.data.frame(enp.enep_nat,enp.enp_avg_wght,by = c("id","ctr_n","ctr","yr","mn","cst","tier")) # ADDED TIER
+  enp.merge <- merge.data.frame(enp.enep_nat,enp.enp_avg_wght,by = c("id","ctr_n","ctr","yr","mn","cst","tier"))
 
-  enp.slim <- subset(enp.merge, select = c(id,ctr_n,ctr,yr,mn,tier,ENEP_nat,ENEP_avg,ENEP_wght,indicator)) # ADDED TIER
-  enp.slim_rows <- !duplicated(enp.slim[c("id","ctr_n","ctr","yr", "mn","tier")]) # ADDED TIER
+  enp.slim <- subset(enp.merge, select = c(id,ctr_n,ctr,yr,mn,tier,ENEP_nat,ENEP_avg,ENEP_wght,indicator))
+  enp.slim_rows <- !duplicated(enp.slim[c("id","ctr_n","ctr","yr", "mn","tier")])
   enp.full <- enp.slim[enp.slim_rows,]
-  full.enp <- enp.full[order(enp.full$ctr_n,enp.full$yr,enp.full$mn,enp.full$tier),] # ADDED TIER
+  full.enp <- enp.full[order(enp.full$ctr_n,enp.full$yr,enp.full$mn,enp.full$tier),]
 
   # Creating Cox, MK_I, & MK_I_w
   full.enp$cox <- (full.enp$ENEP_nat - full.enp$ENEP_avg)/ full.enp$ENEP_nat
@@ -569,17 +569,17 @@ nationalization <- function(dataSource,
 
   # Grabbing distinct cases, using data.c computed in subset section
   data.c <- as.data.frame(data.c)
-  nat.unique.rows <- !duplicated(data.c[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")]) # ADDED TIER
+  nat.unique.rows <- !duplicated(data.c[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")])
   psns.distinct <- data.c[nat.unique.rows,]
 
   # Computing ENP_cst (using unique data above)
-  psns.new_vv1 <- data.table(psns.distinct)[,new_vv1 := sum(vote.totals),by=c("ctr_n","ctr","yr","mn","cst","tier")] # ADDED TIER
-  psns.new_shares_sq <- data.table(psns.new_vv1)[,share_sq := (vote.totals/new_vv1)^2,by=c("ctr_n","ctr","yr","mn","cst","tier")] # ADDED TIER
-  psns.new_denom <- data.table(psns.new_shares_sq)[,denominator := sum(share_sq, na.rm = TRUE),by=c("ctr_n","ctr","yr","mn","cst","tier")] # ADDED TIER
-  psns.enep_cst <- data.table(psns.new_denom)[,ENEP_cst := 1/denominator,by=c("ctr_n","ctr","yr","mn","cst","tier")] # ADDED TIER
+  psns.new_vv1 <- data.table(psns.distinct)[,new_vv1 := sum(vote.totals),by=c("ctr_n","ctr","yr","mn","cst","tier")]
+  psns.new_shares_sq <- data.table(psns.new_vv1)[,share_sq := (vote.totals/new_vv1)^2,by=c("ctr_n","ctr","yr","mn","cst","tier")]
+  psns.new_denom <- data.table(psns.new_shares_sq)[,denominator := sum(share_sq, na.rm = TRUE),by=c("ctr_n","ctr","yr","mn","cst","tier")]
+  psns.enep_cst <- data.table(psns.new_denom)[,ENEP_cst := 1/denominator,by=c("ctr_n","ctr","yr","mn","cst","tier")]
 
   # Merging this ENP_cst with the full ENP above at the national-level
-  psns.full_enp <- merge(psns.enep_cst,full.enp, by = c("id","ctr_n","ctr","yr","mn","tier")) # ADDED TIER
+  psns.full_enp <- merge(psns.enep_cst,full.enp, by = c("id","ctr_n","ctr","yr","mn","tier"))
 
   # Renaming to just "psns" for easier typing, then computing prerequisites for inflation values (there are many)
   psns <- psns.full_enp
@@ -588,52 +588,52 @@ nationalization <- function(dataSource,
   psns$beta <- 0.25
   psns$gamma <- 0.5
 
-  psns.nat_vote <- data.table(psns)[, nat_vote := sum(new_vv1, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.cst_vote_prop <- data.table(psns.nat_vote)[,cst_vote_prop := new_vv1/nat_vote, by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.product <- data.table(psns.cst_vote_prop)[,product := ENEP_cst *  cst_vote_prop, by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.sum_cst <- data.table(psns.product)[,sum_cst := sum(product, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.denom <- data.table(psns.sum_cst)[,denominator := cst_tot * sum_cst, by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.W_tilde <- data.table(psns.denom)[,W_tilde := ENEP_cst/ denominator, by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.I_w <- data.table(psns.W_tilde)[,I_w := ((ENEP_nat - sum_cst)/sum_cst)*100, by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.numerator <- data.table(psns.I_w)[,numerator := (I_i -  I_w)^2 * W_tilde, by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.sum_numerator <- data.table(psns.numerator)[,sum_numerator := sum(numerator, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.coeff_var_I_i <- data.table(psns.sum_numerator)[,coeff_var_I_i := sqrt(sum_numerator)/I_w, by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.numerator_r2 <- data.table(psns.coeff_var_I_i)[,numerator_r2 := ((I_i - I_w)^4) * W_tilde, by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.sum_numerator_r2 <- data.table(psns.numerator_r2)[,sum_numerator_r2 := sum(numerator_r2, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.denominator_r2 <- data.table(psns.sum_numerator_r2)[,denominator2 := ((I_i - I_w)^2) * W_tilde, by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.sum_denominator_r2 <- data.table(psns.denominator_r2)[,sum_denominator_r2 := sum(denominator2, na.rm=TRUE), by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
+  psns.nat_vote <- data.table(psns)[, nat_vote := sum(new_vv1, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.cst_vote_prop <- data.table(psns.nat_vote)[,cst_vote_prop := new_vv1/nat_vote, by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.product <- data.table(psns.cst_vote_prop)[,product := ENEP_cst *  cst_vote_prop, by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.sum_cst <- data.table(psns.product)[,sum_cst := sum(product, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.denom <- data.table(psns.sum_cst)[,denominator := cst_tot * sum_cst, by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.W_tilde <- data.table(psns.denom)[,W_tilde := ENEP_cst/ denominator, by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.I_w <- data.table(psns.W_tilde)[,I_w := ((ENEP_nat - sum_cst)/sum_cst)*100, by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.numerator <- data.table(psns.I_w)[,numerator := (I_i -  I_w)^2 * W_tilde, by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.sum_numerator <- data.table(psns.numerator)[,sum_numerator := sum(numerator, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.coeff_var_I_i <- data.table(psns.sum_numerator)[,coeff_var_I_i := sqrt(sum_numerator)/I_w, by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.numerator_r2 <- data.table(psns.coeff_var_I_i)[,numerator_r2 := ((I_i - I_w)^4) * W_tilde, by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.sum_numerator_r2 <- data.table(psns.numerator_r2)[,sum_numerator_r2 := sum(numerator_r2, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.denominator_r2 <- data.table(psns.sum_numerator_r2)[,denominator2 := ((I_i - I_w)^2) * W_tilde, by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.sum_denominator_r2 <- data.table(psns.denominator_r2)[,sum_denominator_r2 := sum(denominator2, na.rm=TRUE), by = c("ctr_n","ctr","yr","mn","tier")]
   psns.sum_denominator_r2$sq_sum_denominator_r2 <- (psns.sum_denominator_r2$sum_denominator_r2)^2
-  psns.kurtosis_I_i <- data.table(psns.sum_denominator_r2)[,kurtosis_I_i := sum_numerator_r2/sq_sum_denominator_r2, by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
+  psns.kurtosis_I_i <- data.table(psns.sum_denominator_r2)[,kurtosis_I_i := sum_numerator_r2/sq_sum_denominator_r2, by = c("ctr_n","ctr","yr","mn","tier")]
   psns.D <- data.table(psns.kurtosis_I_i)[, D := abs(coeff_var_I_i)^gamma * abs(kurtosis_I_i)^(1-gamma) * sign(coeff_var_I_i*kurtosis_I_i),
-                                    by = c("ctr_n","ctr","yr","mn","tier")]  # ADDED TIER
-  psns.MK_N <- data.table(psns.D)[, MK_N := abs(I_w)^alpha * abs(D)^(1-alpha) * sign(I_w*D), by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
+                                    by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.MK_N <- data.table(psns.D)[, MK_N := abs(I_w)^alpha * abs(D)^(1-alpha) * sign(I_w*D), by = c("ctr_n","ctr","yr","mn","tier")]
 
   # NOT naming with "psns." to maintain the final object with all columns
   MK_N_two <- data.table(psns.MK_N)[, MK_N_two := abs(I_w)^alpha * abs(coeff_var_I_i)^beta * abs(kurtosis_I_i)^(1 - alpha - beta) * sign(I_w*coeff_var_I_i*kurtosis_I_i),
-                                   by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
+                                   by = c("ctr_n","ctr","yr","mn","tier")]
 
   # Removing previously-computed objects to maintain memory efficiency
   rm(list = ls()[grep("^psns", ls())])
 
   # A few more prerequisites, grabbing distinct cases again, then merging in party.level measures
-  psns.nat_vv1 <- data.table(MK_N_two)[, nat_vv1 := sum(vote.totals, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.pty_vv1 <- data.table(psns.nat_vv1)[, pty_vv1 := sum(vote.totals, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","pty","tier")] # ADDED TIER
+  psns.nat_vv1 <- data.table(MK_N_two)[, nat_vv1 := sum(vote.totals, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.pty_vv1 <- data.table(psns.nat_vv1)[, pty_vv1 := sum(vote.totals, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","pty","tier")]
   psns.pty_vv1 <- as.data.frame(psns.pty_vv1)
 
-  psns.unique.rows <- !duplicated(psns.pty_vv1[,c("id","ctr_n","ctr","yr", "mn","pty","tier")]) # ADDED TIER
+  psns.unique.rows <- !duplicated(psns.pty_vv1[,c("id","ctr_n","ctr","yr", "mn","pty","tier")])
   psns.unique <- psns.pty_vv1[psns.unique.rows,]
 
-  psns.pty_merge <- merge(psns.unique,full.pty,by = c("id", "ctr_n", "ctr", "yr", "mn", "pty", "pty_n", "cst_tot","tier"),all.x = TRUE) # ADDED TIER
+  psns.pty_merge <- merge(psns.unique,full.pty,by = c("id", "ctr_n", "ctr", "yr", "mn", "pty", "pty_n", "cst_tot","tier"),all.x = TRUE)
 
   # Ordering by party, computing weights, then computing PSNS & friends
   psns.pty_merge <- psns.pty_merge[order(psns.pty_merge$ctr_n,psns.pty_merge$ctr,psns.pty_merge$yr,
                                       psns.pty_merge$mn,psns.pty_merge$pty,psns.pty_merge$pty_n),]
   psns.pty_merge$weight <- psns.pty_merge$pty_vv1/psns.pty_merge$nat_vv1
 
-  psns.psns <- data.table(psns.pty_merge)[, PSNS := sum(PNS * weight, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.psns_s <- data.table(psns.psns)[, PSNS_s := sum(PNS_s * weight, na.rm=TRUE), by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.psns_w <- data.table(psns.psns_s)[, PSNS_w := sum(PNS_w * weight, na.rm=TRUE), by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
-  psns.psns_sw <- data.table(psns.psns_w)[, PSNS_sw := sum(PNS_sw *weight, na.rm=TRUE), by = c("ctr_n","ctr","yr","mn","tier")] # ADDED TIER
+  psns.psns <- data.table(psns.pty_merge)[, PSNS := sum(PNS * weight, na.rm = TRUE), by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.psns_s <- data.table(psns.psns)[, PSNS_s := sum(PNS_s * weight, na.rm=TRUE), by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.psns_w <- data.table(psns.psns_s)[, PSNS_w := sum(PNS_w * weight, na.rm=TRUE), by = c("ctr_n","ctr","yr","mn","tier")]
+  psns.psns_sw <- data.table(psns.psns_w)[, PSNS_sw := sum(PNS_sw *weight, na.rm=TRUE), by = c("ctr_n","ctr","yr","mn","tier")]
 
   # Replacing PSNS & friends with NA if they equal zero or are greater than 1
   psns.to_edit <- psns.psns_sw
@@ -643,7 +643,7 @@ nationalization <- function(dataSource,
   psns.to_edit$PSNS_sw <- ifelse(psns.to_edit$PSNS_sw == 0 | psns.to_edit$PSNS_sw > 1, NA, psns.to_edit$PSNS_sw)
 
   # Selecting relevant columns, then grabbing unique again
-  psns.slim <- subset(psns.to_edit, select = c(id,ctr_n,ctr,yr,mn,tier,PSNS,PSNS_s,PSNS_w,PSNS_sw,MK_N,MK_N_two,cst_tot)) # ADDED TIER
+  psns.slim <- subset(psns.to_edit, select = c(id,ctr_n,ctr,yr,mn,tier,PSNS,PSNS_s,PSNS_w,PSNS_sw,MK_N,MK_N_two,cst_tot))
   psns.slim <- as.data.frame(psns.slim)
   psns.unique_rows <- !duplicated(psns.slim)
   full.psns <- psns.slim[psns.unique_rows,]
@@ -657,30 +657,30 @@ nationalization <- function(dataSource,
 
   # Grabbing distinct cases
   data.d <- as.data.frame(data.d)
-  local.unique_rows <- !duplicated(data.d[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")]) # ADDED TIER
+  local.unique_rows <- !duplicated(data.d[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")])
   local.unique <- data.d[local.unique_rows,]
 
   # Renaming to "local." plus the variable/data being created
-  local.nat_vote <- data.table(local.unique)[, nat_vote := sum(vote.totals, na.rm=TRUE), by = c("ctr_n","ctr","yr", "mn","tier")] # ADDED TIER
-  local.seat_cst <- data.table(local.nat_vote)[, seat_cst := sum(seat, na.rm=TRUE), by = c("ctr_n","ctr","yr", "mn","cst","tier")] # ADDED TIER
-  local.party_vote_prop <- data.table(local.seat_cst)[, party_vote_prop := vote.totals/nat_vote, by = c("ctr_n","ctr","yr", "mn","cst","tier")] # ADDED TIER
+  local.nat_vote <- data.table(local.unique)[, nat_vote := sum(vote.totals, na.rm=TRUE), by = c("ctr_n","ctr","yr", "mn","tier")]
+  local.seat_cst <- data.table(local.nat_vote)[, seat_cst := sum(seat, na.rm=TRUE), by = c("ctr_n","ctr","yr", "mn","cst","tier")]
+  local.party_vote_prop <- data.table(local.seat_cst)[, party_vote_prop := vote.totals/nat_vote, by = c("ctr_n","ctr","yr", "mn","cst","tier")]
 
   # Arranging, then computing seat proportion & party vote proportion
   local.party_vote_prop <- local.party_vote_prop[order(local.party_vote_prop$ctr_n,local.party_vote_prop$ctr,
                                                        local.party_vote_prop$yr,local.party_vote_prop$mn,
                                                        local.party_vote_prop$cst,local.party_vote_prop$pty)]
-  local.seat_total <- data.table(local.party_vote_prop)[, seat_total := sum(seat, na.rm=TRUE), by = c("ctr_n","ctr","yr", "mn","tier")] # ADDED TIER
-  local.seat_contest <- data.table(local.seat_total)[, seat_contest := sum(seat_cst, na.rm=TRUE), by = c("ctr_n","ctr","yr", "mn","pty","tier")] # ADDED TIER
-  local.seat_prop <- data.table(local.seat_contest)[, seat_prop := seat_contest/seat_total, by = c("ctr_n","ctr","yr", "mn","pty","tier")] # ADDED TIER
+  local.seat_total <- data.table(local.party_vote_prop)[, seat_total := sum(seat, na.rm=TRUE), by = c("ctr_n","ctr","yr", "mn","tier")]
+  local.seat_contest <- data.table(local.seat_total)[, seat_contest := sum(seat_cst, na.rm=TRUE), by = c("ctr_n","ctr","yr", "mn","pty","tier")]
+  local.seat_prop <- data.table(local.seat_contest)[, seat_prop := seat_contest/seat_total, by = c("ctr_n","ctr","yr", "mn","pty","tier")]
 
   # Computing local_E by party & tier, then getting national sum
-  local.local_E <- data.table(local.seat_prop)[, local_E := party_vote_prop * seat_prop, by = c("ctr_n","ctr","yr", "mn","pty","tier")] # ADDED TIER
-  local.local_E_r2 <- data.table(local.local_E)[, local_E := sum(local_E, na.rm=TRUE), by = c("ctr_n","ctr","yr", "mn","tier")] # ADDED TIER
+  local.local_E <- data.table(local.seat_prop)[, local_E := party_vote_prop * seat_prop, by = c("ctr_n","ctr","yr", "mn","pty","tier")]
+  local.local_E_r2 <- data.table(local.local_E)[, local_E := sum(local_E, na.rm=TRUE), by = c("ctr_n","ctr","yr", "mn","tier")]
 
   # Selecting down to relevant columns, then grabbing distinct
-  local.local_E_r2 <- subset(local.local_E_r2, select = c(id,ctr_n,ctr,yr,mn,tier,local_E)) # ADDED TIER
+  local.local_E_r2 <- subset(local.local_E_r2, select = c(id,ctr_n,ctr,yr,mn,tier,local_E))
   local.local_E_r2 <- as.data.frame(local.local_E_r2)
-  local_E_rows <- !duplicated(local.local_E_r2[,c("id","ctr_n","ctr","yr", "mn","tier")]) # ADDED TIER
+  local_E_rows <- !duplicated(local.local_E_r2[,c("id","ctr_n","ctr","yr", "mn","tier")])
   full.local_E <- local.local_E_r2[local_E_rows,]
 
   # Removing previous computations for more efficient memory usage
@@ -692,8 +692,8 @@ nationalization <- function(dataSource,
 
   # Merging all of the national level ("full")!
   nat.enp_psns_merge <- merge(full.enp,full.psns,by = c("id","ctr_n","ctr","yr","mn","tier"),
-                        all = TRUE, sort = TRUE) # ADDED TIER
-  nat.full <- merge(nat.enp_psns_merge,full.local_E, by = c("id","ctr_n","ctr","yr","mn","tier"), all = TRUE) # ADDED TIER
+                        all = TRUE, sort = TRUE)
+  nat.full <- merge(nat.enp_psns_merge,full.local_E, by = c("id","ctr_n","ctr","yr","mn","tier"), all = TRUE)
 
   # Renaming columns to inflation[1-4] & indicator to nvvi, then cleaning up inflation/nvvi values (zero are NA)
   names(nat.full)[names(nat.full) == "cox"] <- "inflation1"
@@ -712,21 +712,21 @@ nationalization <- function(dataSource,
   nat.full$local_E <- ifelse(nat.full$local_E ==0 | nat.full$local_E > 1, NA, nat.full$local_E)
 
   # Joining in data grid (with parties, etc.)
-  grid <- as.data.frame(subset(base, select = c(id,ctr_n,ctr,yr,mn,tier,cst,cst_n,pty,pty_n))) # ADDED TIER
-  full.nat <- merge(nat.full,grid, by = c("id","ctr_n","ctr","yr","mn","tier"), all = TRUE) # ADDED TIER
+  grid <- as.data.frame(subset(base, select = c(id,ctr_n,ctr,yr,mn,tier,cst,cst_n,pty,pty_n)))
+  full.nat <- merge(nat.full,grid, by = c("id","ctr_n","ctr","yr","mn","tier"), all = TRUE)
 
   # Grabbing unique, ordering, renaming ENP, then shipping!
-  full.nat_rows <- !duplicated(full.nat[,c("id","ctr_n","ctr","yr", "mn","tier")]) # ADDED TIER
+  full.nat_rows <- !duplicated(full.nat[,c("id","ctr_n","ctr","yr", "mn","tier")])
   full.nat <- full.nat[full.nat_rows,]
 
-  full.nat <- full.nat[order(full.nat$ctr_n,full.nat$yr,full.nat$tier),] # ADDED TIER
+  full.nat <- full.nat[order(full.nat$ctr_n,full.nat$yr,full.nat$tier),]
 
   names(full.nat)[names(full.nat) == "ENEP_nat"] <- "ENP_nat"
   names(full.nat)[names(full.nat) == "ENEP_avg"] <- "ENP_avg"
   names(full.nat)[names(full.nat) == "ENEP_wght"] <- "ENP_wght"
 
   full.nat <- subset(full.nat, select = c(id, ctr_n, ctr, yr, mn, tier, nvvi, ENP_nat, ENP_avg, ENP_wght, inflation1, inflation2,
-                                          inflation3,inflation4, PSNS, PSNS_s, PSNS_w, PSNS_sw, local_E, cst_tot)) # ADDED TIER
+                                          inflation3,inflation4, PSNS, PSNS_s, PSNS_w, PSNS_sw, local_E, cst_tot))
 
   # Removing previous computations for more efficient memory usage
   rm(list = ls()[grep("^nat", ls())])
@@ -747,40 +747,40 @@ nationalization <- function(dataSource,
   cst.message()
 
   # Grabbing distinct cases, then renaming to "cst." plus the variable/data being created
-  cst.unique_rows <- !duplicated(data.b[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")]) # ADDED TIER
+  cst.unique_rows <- !duplicated(data.b[,c("id","ctr_n","ctr","yr", "mn","cst","pty","tier")])
   cst.base <- data.b[cst.unique_rows,]
 
   # Computing prerequisites for ENP_cst
   cst.cst_tot <- data.table(cst.base)[, cst_tot := length(unique(cst)), by = c("ctr_n","ctr","yr", "mn")]
-  cst.new_vv1 <- data.table(cst.cst_tot)[, new_vv1 := sum(vote.totals, na.rm = TRUE), by = c("ctr_n","ctr","yr", "mn","cst","tier")] # ADDED TIER
-  cst.share_sq <- data.table(cst.new_vv1)[, share_sq := (vote.totals/new_vv1)^2, by = c("ctr_n","ctr","yr", "mn","cst","tier")] # ADDED TIER
-  cst.denom <- data.table(cst.share_sq)[, denom := sum(share_sq), by = c("ctr_n","ctr","yr", "mn","cst","tier")] # ADDED TIER
+  cst.new_vv1 <- data.table(cst.cst_tot)[, new_vv1 := sum(vote.totals, na.rm = TRUE), by = c("ctr_n","ctr","yr", "mn","cst","tier")]
+  cst.share_sq <- data.table(cst.new_vv1)[, share_sq := (vote.totals/new_vv1)^2, by = c("ctr_n","ctr","yr", "mn","cst","tier")]
+  cst.denom <- data.table(cst.share_sq)[, denom := sum(share_sq), by = c("ctr_n","ctr","yr", "mn","cst","tier")]
 
   # Computing ENP_cst
-  cst.enp_cst <- data.table(cst.denom)[, ENP_cst := 1/denom, by = c("ctr_n","ctr","yr", "mn","cst","tier")] # ADDED TIER
+  cst.enp_cst <- data.table(cst.denom)[, ENP_cst := 1/denom, by = c("ctr_n","ctr","yr", "mn","cst","tier")]
 
   # Computing the vv1 indicator, cvvi, selecting down to relevant columns, then grabbing distinct cases again
   cst.enp_cst$cvvi <- 0
   cst.enp_cst$cvvi <- ifelse(cst.enp_cst$vv1 != cst.enp_cst$new_vv1,1,cst.enp_cst$cvvi)
-  cst.enp_cst <- subset(cst.enp_cst, select = c(id,ctr_n,ctr,yr,mn,tier,cst,cst_n,ENP_cst,cvvi)) # ADDED TIER
+  cst.enp_cst <- subset(cst.enp_cst, select = c(id,ctr_n,ctr,yr,mn,tier,cst,cst_n,ENP_cst,cvvi))
 
   cst.enp_cst <- as.data.frame(cst.enp_cst)
-  cst.unique_rows_enp <- !duplicated(cst.enp_cst[,c("id","ctr_n","ctr","yr", "mn","cst","tier")]) # ADDED TIER
+  cst.unique_rows_enp <- !duplicated(cst.enp_cst[,c("id","ctr_n","ctr","yr", "mn","cst","tier")])
   cst.enp <- cst.enp_cst[cst.unique_rows_enp,]
 
   # Merging in national-level to compute inflation5
-  cst.nat <- merge(cst.enp,full.enp, by = c("id","ctr_n","ctr","yr", "mn","tier"), all = TRUE) # ADDED TIER
+  cst.nat <- merge(cst.enp,full.enp, by = c("id","ctr_n","ctr","yr", "mn","tier"), all = TRUE)
   cst.nat <- as.data.frame(cst.nat)
   cst.nat$inflation5 <- (cst.nat$ENEP_nat - cst.nat$ENP_cst)/cst.nat$ENP_cst
 
   # Merging in data grid to get party info
-  cst.nat.pty <- merge(cst.nat,grid,by = c("id","ctr_n","ctr","yr", "mn","cst","cst_n","tier"), all = TRUE) # ADDED TIER
+  cst.nat.pty <- merge(cst.nat,grid,by = c("id","ctr_n","ctr","yr", "mn","cst","cst_n","tier"), all = TRUE)
 
   # Selecting down to relevant columns, arranging, grabbing distinct, then shipping!
-  cst.slim <- subset(cst.nat.pty, select = c(id,ctr_n,ctr,yr,mn,tier,cst,cst_n,cvvi,ENP_cst)) # ADDED TIER
-  cst.slim <- cst.slim[order(cst.slim$ctr_n,cst.slim$yr,cst.slim$mn,cst.slim$cst,cst.slim$tier),] # ADDED TIER
+  cst.slim <- subset(cst.nat.pty, select = c(id,ctr_n,ctr,yr,mn,tier,cst,cst_n,cvvi,ENP_cst))
+  cst.slim <- cst.slim[order(cst.slim$ctr_n,cst.slim$yr,cst.slim$mn,cst.slim$cst,cst.slim$tier),]
 
-  cst.slim_unique_rows <- !duplicated(cst.slim[,c("id","ctr_n","ctr","yr", "mn","cst","tier")]) # ADDED TIER
+  cst.slim_unique_rows <- !duplicated(cst.slim[,c("id","ctr_n","ctr","yr", "mn","cst","tier")])
   full.cst <- cst.slim[cst.slim_unique_rows,]
 
   # Writing constituency-level to .xlsx; informing of success
